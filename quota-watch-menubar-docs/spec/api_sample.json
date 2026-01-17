@@ -1,0 +1,22 @@
+{
+  "code": 0,
+  "data": {
+    "limits": [
+      {
+        "type": "TOKENS_5H",
+        "percentage": 42.3,
+        "usage": 4230,
+        "number": 10000,
+        "remaining": 5770,
+        "nextResetTime": 1737100800
+      },
+      {
+        "type": "WEB_SEARCH_MONTHLY",
+        "usage": 12,
+        "number": 100,
+        "remaining": 88,
+        "nextResetTime": "2026-02-01T00:00:00Z"
+      }
+    ]
+  }
+}

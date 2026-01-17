@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "nextFetchEpoch": {"type": "integer"},
+    "backoffFactor": {"type": "integer", "minimum": 1},
+    "lastFetchEpoch": {"type": "integer"},
+    "lastError": {"type": "string"},
+    "lastKnownResetEpoch": {"type": "integer"},
+    "lastNotifiedResetEpoch": {"type": "integer"}
+  },
+  "required": [
+    "nextFetchEpoch",
+    "backoffFactor",
+    "lastFetchEpoch",
+    "lastError",
+    "lastKnownResetEpoch",
+    "lastNotifiedResetEpoch"
+  ]
+}
