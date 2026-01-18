@@ -55,8 +55,8 @@ public struct BackoffDecision: Sendable, Equatable {
     /// - Returns: バックオフ判定（最大15分 + ジッター）
     public static func backoff(factor: Int, baseInterval: TimeInterval) -> Self {
         let wait = baseInterval * Double(factor)
-        let cappedWait = min(wait, 900)  // MAX_BACKOFF_SECONDS = 15分
-        let jitter = Double.random(in: 0...15)
+        let cappedWait = min(wait, AppConstants.maxBackoffSeconds)
+        let jitter = Double.random(in: 0...AppConstants.jitterSeconds)
         let totalWait = cappedWait + jitter
         return BackoffDecision(
             action: .backoff(wait: totalWait),
