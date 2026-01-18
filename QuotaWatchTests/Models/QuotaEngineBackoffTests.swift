@@ -123,8 +123,8 @@ final class QuotaEngineBackoffTests: XCTestCase {
         provider.shouldThrowRateLimit = false
         _ = try await engine.forceFetch()
 
-        // 前回のフェッチから十分に経過するのを待つ
-        try await Task.sleep(nanoseconds: 2_000_000_000) // 2秒
+        // 次回フェッチ時刻を現在時刻に設定（テストヘルパーを使用）
+        await engine.overrideNextFetchEpoch(Int(Date().timeIntervalSince1970))
 
         // フェッチを実行
         _ = try await engine.fetchIfDue()
@@ -150,8 +150,8 @@ final class QuotaEngineBackoffTests: XCTestCase {
         provider.shouldThrowRateLimit = false
         _ = try await engine.forceFetch()
 
-        // 前回のフェッチから十分に経過するのを待つ
-        try await Task.sleep(nanoseconds: 60_000_000_000) // 60秒
+        // 次回フェッチ時刻を現在時刻に設定（テストヘルパーを使用）
+        await engine.overrideNextFetchEpoch(Int(Date().timeIntervalSince1970))
 
         // レート制限を発生させる
         provider.shouldThrowRateLimit = true
@@ -185,8 +185,8 @@ final class QuotaEngineBackoffTests: XCTestCase {
         provider.shouldThrowRateLimit = false
         _ = try await engine.forceFetch()
 
-        // 前回のフェッチから十分に経過するのを待つ
-        try await Task.sleep(nanoseconds: 60_000_000_000) // 60秒
+        // 次回フェッチ時刻を現在時刻に設定（テストヘルパーを使用）
+        await engine.overrideNextFetchEpoch(Int(Date().timeIntervalSince1970))
 
         // 最初にレート制限を発生させてバックオフ状態にする
         provider.shouldThrowRateLimit = true
@@ -216,8 +216,8 @@ final class QuotaEngineBackoffTests: XCTestCase {
         provider.shouldThrowRateLimit = false
         _ = try await engine.forceFetch()
 
-        // 前回のフェッチから十分に経過するのを待つ
-        try await Task.sleep(nanoseconds: 60_000_000_000) // 60秒
+        // 次回フェッチ時刻を現在時刻に設定（テストヘルパーを使用）
+        await engine.overrideNextFetchEpoch(Int(Date().timeIntervalSince1970))
 
         // ネットワークエラーを発生させる
         provider.shouldThrowNetworkError = true
@@ -240,17 +240,14 @@ final class QuotaEngineBackoffTests: XCTestCase {
         provider.shouldThrowRateLimit = false
         _ = try await engine.forceFetch()
 
-        // 前回のフェッチから十分に経過するのを待つ
-        try await Task.sleep(nanoseconds: 60_000_000_000) // 60秒
-
         // レート制限を3回発生させてジッターが適用されていることを確認
         provider.shouldThrowRateLimit = true
 
         var intervals: Set<Int> = []
 
         for _ in 1...3 {
-            // 前回のフェッチから60秒以上経過するのを待つ
-            try await Task.sleep(nanoseconds: 60_000_000_000) // 60秒
+            // 次回フェッチ時刻を現在時刻に設定（テストヘルパーを使用）
+            await engine.overrideNextFetchEpoch(Int(Date().timeIntervalSince1970))
 
             _ = try await engine.fetchIfDue()
 
@@ -288,4 +285,17 @@ final class QuotaEngineBackoffTests: XCTestCase {
         // 60秒前後であることを確認（基本間隔は60にクリップされる）
         XCTAssertEqual(interval, 60, accuracy: 5)
     }
+
+    // MARK: - Issue #38: 後回しにしたテスト
+
+    /// 以下のテストはIssue #38で本格実装予定
+    /// https://github.com/mo9mo9-uwu-mo9mo9/QuotaWatch/issues/38
+    ///
+    /// TODO: 指数関数的バックオフ（testRateLimit_ExponentialBackoff）
+    /// - 2回目、3回目のバックオフで係数が4, 8になることを確認
+    /// - 時間管理の抽象化またはモック導入が必要
+    ///
+    /// TODO: 最大バックオフクリップ（testRateLimit_MaxBackoffCap）
+    /// - 5回連続のレート制限で、バックオフ係数が15に達した後、間隔が915秒以下にクリップされることを確認
+    /// - テスト時間を短縮する工夫が必要
 }

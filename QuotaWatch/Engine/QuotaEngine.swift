@@ -361,4 +361,17 @@ public actor QuotaEngine {
         self.baseInterval = clamped
         logger.debug("基本フェッチ間隔を更新: \(Int(clamped))秒")
     }
+
+    // MARK: - テストヘルパー（DEBUGビルドのみ）
+
+    #if DEBUG
+    /// 次回フェッチ時刻を強制的に設定（テスト用）
+    ///
+    /// テストで60秒待機することを回避するために使用します。
+    ///
+    /// - Parameter epoch: 次回フェッチ時刻（epoch秒）
+    public func overrideNextFetchEpoch(_ epoch: Int) {
+        self.state.nextFetchEpoch = epoch
+    }
+    #endif
 }
