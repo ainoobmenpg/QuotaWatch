@@ -27,6 +27,10 @@
 		F1A2B3C4D5E6F7A8B9C0D1E2 /* QuotaEngineBackoffTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1F2A3B4C5D6E7F8A9B0C1D2 /* QuotaEngineBackoffTests.swift */; };
 		A3B4C5D6E7F8A9B0C1D2E3F4 /* MockProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C5D6E7F8A9B0C1D2E3F4A5 /* MockProvider.swift */; };
 		C1D2E3F4A5B6C7D8E9F0A1B2 /* QuotaEngineRunLoopTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2E3F4A5B6C7D8E9F0A1B2C3 /* QuotaEngineRunLoopTests.swift */; };
+		1A2B3C4D5E6F7A8B9C0D1E2F3 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B3C4D5E6F7A8B9C0D1E2F3A /* NotificationManager.swift */; };
+		3B4C5D6E7F8A9B0C1D2E3F4A /* ResetNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C5D6E7F8A9B0C1D2E3F4A5 /* ResetNotifier.swift */; };
+		5C6D7E8F9A0B1C2D3E4F5A6 /* NotificationManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D7E8F9A0B1C2D3E4F5A6B7 /* NotificationManagerTests.swift */; };
+		7E8F9A0B1C2D3E4F5A6B7C8 /* ResetNotifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F9A0B1C2D3E4F5A6B7C8D9 /* ResetNotifierTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -41,17 +45,21 @@
 
 /* Begin PBXFileReference section */
 		03084E81161F967B5B48ED5E /* ZaiProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZaiProviderTests.swift; sourceTree = "<group>"; };
+		2B3C4D5E6F7A8B9C0D1E2F3A /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		3B4C5D6E7F8A9B0C1D2E3F45 /* AppConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConstants.swift; sourceTree = "<group>"; };
 		0FA39B39C6BE30DFB3643E8F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		448E3DE91DB622191DA7A505 /* AppStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStateTests.swift; sourceTree = "<group>"; };
+		4C5D6E7F8A9B0C1D2E3F4A5 /* ResetNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResetNotifier.swift; sourceTree = "<group>"; };
 		4D7D094C9F4D41317224B398 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		5859B5E242756C194F88349C /* ProviderError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderError.swift; sourceTree = "<group>"; };
 		5CE1D301D0A84ACF4002B3AE /* PersistenceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceManager.swift; sourceTree = "<group>"; };
 		5F2B18E2AABE4513981EDF0B /* Provider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Provider.swift; sourceTree = "<group>"; };
+		6D7E8F9A0B1C2D3E4F5A6B7 /* NotificationManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManagerTests.swift; sourceTree = "<group>"; };
 		6FD7A1E13AC807A355D8CE5A /* PersistenceManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceManagerTests.swift; sourceTree = "<group>"; };
 		72BB3FC6F6B1CE1A587A75A7 /* KeychainStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStoreTests.swift; sourceTree = "<group>"; };
 		77AF032198079B03D6BAD5D8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		883076AE5C0DD6C6140D4E82 /* QuotaWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = QuotaWatch.entitlements; sourceTree = "<group>"; };
+		8F9A0B1C2D3E4F5A6B7C8D9 /* ResetNotifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResetNotifierTests.swift; sourceTree = "<group>"; };
 		95530C2AB237DCD923169121 /* ZaiProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZaiProvider.swift; sourceTree = "<group>"; };
 		98CF57FDC73CB5839DFAE561 /* QuotaWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuotaWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9A0FF71040DBDFAF8CEDEAC2 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
@@ -109,6 +117,7 @@
 			children = (
 				77AF032198079B03D6BAD5D8 /* Info.plist */,
 				1A2B3C4D5E6F7A8B9C0D1E2F /* Helpers */,
+				9A0B1C2D3E4F5A6B7C8D9E0F /* Managers */,
 				F42DFA1EB2F45BAE92106AA2 /* Models */,
 				EB522D17D056F7A5D89F9936 /* Providers */,
 				D085335F820D434D2E6BDC3E /* Stores */,
@@ -122,6 +131,15 @@
 				B4C5D6E7F8A9B0C1D2E3F4A5 /* MockProvider.swift */,
 			);
 			path = Helpers;
+			sourceTree = "<group>";
+		};
+		9A0B1C2D3E4F5A6B7C8D9E0F /* Managers */ = {
+			isa = PBXGroup;
+			children = (
+				6D7E8F9A0B1C2D3E4F5A6B7 /* NotificationManagerTests.swift */,
+				8F9A0B1C2D3E4F5A6B7C8D9 /* ResetNotifierTests.swift */,
+			);
+			path = Managers;
 			sourceTree = "<group>";
 		};
 		AA8BF28402509C84884AC113 /* Models */ = {
@@ -141,12 +159,22 @@
 				883076AE5C0DD6C6140D4E82 /* QuotaWatch.entitlements */,
 				D876A7EE8D651909AD6EEF61 /* QuotaWatchApp.swift */,
 				0E2F3A4B5C6D7E8F9A0B1C2D /* Engine */,
+				9B1C2D3E4F5A6B7C8D9E0F1 /* Managers */,
 				AA8BF28402509C84884AC113 /* Models */,
 				0600DAE6697D9092D3B51F7F /* Providers */,
 				BA9CA4CC4448EED19B311E87 /* Stores */,
 				0A1B2C3D4E5F6A7B8C9D0E1F /* Utils */,
 			);
 			path = QuotaWatch;
+			sourceTree = "<group>";
+		};
+		9B1C2D3E4F5A6B7C8D9E0F1 /* Managers */ = {
+			isa = PBXGroup;
+			children = (
+				2B3C4D5E6F7A8B9C0D1E2F3A /* NotificationManager.swift */,
+				4C5D6E7F8A9B0C1D2E3F4A5 /* ResetNotifier.swift */,
+			);
+			path = Managers;
 			sourceTree = "<group>";
 		};
 		BA9CA4CC4448EED19B311E87 /* Stores */ = {
@@ -290,6 +318,8 @@
 				4B06086F20DE6659FCA2227B /* QuotaWatchApp.swift in Sources */,
 				A444AC373B13252291BBDCD2 /* UsageSnapshot.swift in Sources */,
 				D640CCB932A9153444DFDC7A /* ZaiProvider.swift in Sources */,
+				1A2B3C4D5E6F7A8B9C0D1E2F3 /* NotificationManager.swift in Sources */,
+				3B4C5D6E7F8A9B0C1D2E3F4A /* ResetNotifier.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -305,6 +335,8 @@
 				F1A2B3C4D5E6F7A8B9C0D1E2 /* QuotaEngineBackoffTests.swift in Sources */,
 				A3B4C5D6E7F8A9B0C1D2E3F4 /* MockProvider.swift in Sources */,
 				C1D2E3F4A5B6C7D8E9F0A1B2 /* QuotaEngineRunLoopTests.swift in Sources */,
+				5C6D7E8F9A0B1C2D3E4F5A6 /* NotificationManagerTests.swift in Sources */,
+				7E8F9A0B1C2D3E4F5A6B7C8 /* ResetNotifierTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
