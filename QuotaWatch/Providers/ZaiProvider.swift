@@ -87,9 +87,13 @@ public struct ZaiProvider: Provider {
                 throw ProviderError.quotaNotAvailable
             }
 
+            // デバッグ: 受信したlimitsのタイプをログ出力
+            let limitTypes = quotaData.limits.map { $0.type }
+            Self.logger.debug("受信したクォータタイプ: \(limitTypes)")
+
             // UsageSnapshotへ正規化
             guard let snapshot = UsageSnapshot(from: quotaData) else {
-                Self.logger.error("プライマリクォータが見つからない")
+                Self.logger.error("プライマリクォータが見つからない。受信したタイプ: \(limitTypes)")
                 throw ProviderError.quotaNotAvailable
             }
 

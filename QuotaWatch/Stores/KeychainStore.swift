@@ -24,6 +24,18 @@ public actor KeychainStore {
     private let account: String
     private let logger = Logger(subsystem: "com.quotawatch.keychain", category: "KeychainStore")
 
+    /// Keychain Access Group
+    /// 開発中でも安定したアクセスを実現するために使用
+    private var accessGroup: String {
+        // AppIdentifierPrefixとBundle Identifierを結合
+        // 例: ABC12345.com.quotawatch.QuotaWatch
+        if let prefix = Bundle.main.object(forInfoDictionaryKey: "AppIdentifierPrefix") as? String {
+            return "\(prefix)com.quotawatch.QuotaWatch"
+        }
+        // フォールバック: Bundle Identifierをそのまま使用
+        return Bundle.main.bundleIdentifier ?? "com.quotawatch.QuotaWatch"
+    }
+
     public init(account: String? = nil) {
         self.account = account ?? NSUserName()
         logger.log("KeychainStore初期化: service=\(Self.service), account=\(self.account)")
@@ -75,6 +87,8 @@ public actor KeychainStore {
         } else {
             var query = createQuery()
             query[kSecValueData as String] = apiKey.data(using: .utf8)!
+            // アクセシビリティ: デバイス起動後の初回アンロック以降はアクセス可能
+            query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
             let status = SecItemAdd(query as CFDictionary, nil)
             if status == errSecSuccess {
                 logger.log("APIキー保存成功")
@@ -122,7 +136,8 @@ public actor KeychainStore {
         var query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: Self.service,
-            kSecAttrAccount as String: account
+            kSecAttrAccount as String: account,
+            kSecAttrAccessGroup as String: accessGroup
         ]
         if returnData {
             query[kSecReturnData as String] = true

@@ -16,7 +16,7 @@ final class UsageSnapshotTests: XCTestCase {
         let snapshot = UsageSnapshot(
             providerId: "zai",
             fetchedAtEpoch: 1737100800,
-            primaryTitle: "GLM 5h",
+            primaryTitle: "Tokens",
             primaryPct: 42,
             primaryUsed: 4230.0,
             primaryTotal: 10000.0,
@@ -24,11 +24,11 @@ final class UsageSnapshotTests: XCTestCase {
             resetEpoch: 1737118800,
             secondary: [
                 UsageLimit(
-                    label: "Search (Monthly)",
-                    pct: 12,
-                    used: 12.0,
-                    total: 100.0,
-                    remaining: 88.0,
+                    label: "Time Limit",
+                    pct: 24,
+                    used: 1200.0,
+                    total: 5000.0,
+                    remaining: 3800.0,
                     resetEpoch: 1738310400
                 )
             ],
@@ -42,14 +42,14 @@ final class UsageSnapshotTests: XCTestCase {
 
         XCTAssertEqual(decoded.providerId, "zai")
         XCTAssertEqual(decoded.fetchedAtEpoch, 1737100800)
-        XCTAssertEqual(decoded.primaryTitle, "GLM 5h")
+        XCTAssertEqual(decoded.primaryTitle, "Tokens")
         XCTAssertEqual(decoded.primaryPct, 42)
         XCTAssertEqual(decoded.primaryUsed, 4230.0)
         XCTAssertEqual(decoded.primaryTotal, 10000.0)
         XCTAssertEqual(decoded.primaryRemaining, 5770.0)
         XCTAssertEqual(decoded.resetEpoch, 1737118800)
         XCTAssertEqual(decoded.secondary.count, 1)
-        XCTAssertEqual(decoded.secondary[0].label, "Search (Monthly)")
+        XCTAssertEqual(decoded.secondary[0].label, "Time Limit")
         XCTAssertEqual(decoded.rawDebugJson, "{\"test\": true}")
     }
 
@@ -57,7 +57,7 @@ final class UsageSnapshotTests: XCTestCase {
         let snapshot1 = UsageSnapshot(
             providerId: "zai",
             fetchedAtEpoch: 1737100800,
-            primaryTitle: "GLM 5h",
+            primaryTitle: "Tokens",
             primaryPct: 42,
             primaryUsed: 4230.0,
             primaryTotal: 10000.0,
@@ -70,7 +70,7 @@ final class UsageSnapshotTests: XCTestCase {
         let snapshot2 = UsageSnapshot(
             providerId: "zai",
             fetchedAtEpoch: 1737100800,
-            primaryTitle: "GLM 5h",
+            primaryTitle: "Tokens",
             primaryPct: 42,
             primaryUsed: 4230.0,
             primaryTotal: 10000.0,
@@ -137,7 +137,7 @@ final class UsageSnapshotTests: XCTestCase {
           "data": {
             "limits": [
               {
-                "type": "TOKENS_5H",
+                "type": "TOKENS_LIMIT",
                 "percentage": 42.3,
                 "usage": 4230,
                 "number": 10000,
@@ -145,10 +145,10 @@ final class UsageSnapshotTests: XCTestCase {
                 "nextResetTime": 1737100800
               },
               {
-                "type": "WEB_SEARCH_MONTHLY",
-                "usage": 12,
-                "number": 100,
-                "remaining": 88,
+                "type": "TIME_LIMIT",
+                "usage": 1200,
+                "number": 5000,
+                "remaining": 3800,
                 "nextResetTime": "2026-02-01T00:00:00Z"
               }
             ]
@@ -166,21 +166,21 @@ final class UsageSnapshotTests: XCTestCase {
         let limits = response.data?.limits
         XCTAssertEqual(limits?.count, 2)
 
-        // 最初の制限（TOKENS_5H）
+        // 最初の制限（TOKENS_LIMIT）
         let firstLimit = limits?[0]
-        XCTAssertEqual(firstLimit?.type, "TOKENS_5H")
+        XCTAssertEqual(firstLimit?.type, "TOKENS_LIMIT")
         XCTAssertEqual(firstLimit?.percentage, 42.3)
         XCTAssertEqual(firstLimit?.usage, 4230.0)
         XCTAssertEqual(firstLimit?.number, 10000.0)
         XCTAssertEqual(firstLimit?.remaining, 5770.0)
 
-        // 2番目の制限（WEB_SEARCH_MONTHLY）
+        // 2番目の制限（TIME_LIMIT）
         let secondLimit = limits?[1]
-        XCTAssertEqual(secondLimit?.type, "WEB_SEARCH_MONTHLY")
+        XCTAssertEqual(secondLimit?.type, "TIME_LIMIT")
         XCTAssertNil(secondLimit?.percentage)
-        XCTAssertEqual(secondLimit?.usage, 12.0)
-        XCTAssertEqual(secondLimit?.number, 100.0)
-        XCTAssertEqual(secondLimit?.remaining, 88.0)
+        XCTAssertEqual(secondLimit?.usage, 1200.0)
+        XCTAssertEqual(secondLimit?.number, 5000.0)
+        XCTAssertEqual(secondLimit?.remaining, 3800.0)
     }
 
     func testQuotaResponseWithError() throws {
@@ -319,7 +319,7 @@ final class UsageSnapshotTests: XCTestCase {
         let snapshot = UsageSnapshot(
             providerId: "zai",
             fetchedAtEpoch: 1737100800,
-            primaryTitle: "GLM 5h",
+            primaryTitle: "Tokens",
             primaryPct: 42,
             primaryUsed: 4230.0,
             primaryTotal: 10000.0,
@@ -343,7 +343,7 @@ final class UsageSnapshotTests: XCTestCase {
         // api_sample.json ベースのテストデータ
         let quotaData = QuotaData(limits: [
             QuotaLimit(
-                type: "TOKENS_5H",
+                type: "TOKENS_LIMIT",
                 percentage: 42.3,
                 usage: 4230,
                 number: 10000,
@@ -351,11 +351,11 @@ final class UsageSnapshotTests: XCTestCase {
                 nextResetTime: .seconds(1737118800)
             ),
             QuotaLimit(
-                type: "WEB_SEARCH_MONTHLY",
+                type: "TIME_LIMIT",
                 percentage: nil,
-                usage: 12,
-                number: 100,
-                remaining: 88,
+                usage: 1200,
+                number: 5000,
+                remaining: 3800,
                 nextResetTime: .iso8601("2026-02-01T00:00:00Z")
             ),
         ])
@@ -364,25 +364,25 @@ final class UsageSnapshotTests: XCTestCase {
 
         XCTAssertNotNil(snapshot)
         XCTAssertEqual(snapshot?.providerId, "zai")
-        XCTAssertEqual(snapshot?.primaryTitle, "GLM 5h")
+        XCTAssertEqual(snapshot?.primaryTitle, "Tokens")
         XCTAssertEqual(snapshot?.primaryPct, 42)
         XCTAssertEqual(snapshot?.primaryUsed, 4230.0)
         XCTAssertEqual(snapshot?.primaryTotal, 10000.0)
         XCTAssertEqual(snapshot?.primaryRemaining, 5770.0)
         XCTAssertEqual(snapshot?.resetEpoch, 1737118800)
         XCTAssertEqual(snapshot?.secondary.count, 1)
-        XCTAssertEqual(snapshot?.secondary[0].label, "Search (Monthly)")
-        XCTAssertEqual(snapshot?.secondary[0].pct, 12)  // 計算: floor(100 * 12 / 100) = 12
-        XCTAssertEqual(snapshot?.secondary[0].used, 12.0)
-        XCTAssertEqual(snapshot?.secondary[0].total, 100.0)
-        XCTAssertEqual(snapshot?.secondary[0].remaining, 88.0)
+        XCTAssertEqual(snapshot?.secondary[0].label, "Time Limit")
+        XCTAssertEqual(snapshot?.secondary[0].pct, 24)  // 計算: floor(100 * 1200 / 5000) = 24
+        XCTAssertEqual(snapshot?.secondary[0].used, 1200.0)
+        XCTAssertEqual(snapshot?.secondary[0].total, 5000.0)
+        XCTAssertEqual(snapshot?.secondary[0].remaining, 3800.0)
         // 2026-02-01 00:00:00 UTC = 1769904000 (epoch秒)
         XCTAssertEqual(snapshot?.secondary[0].resetEpoch, 1769904000)
         XCTAssertNil(snapshot?.rawDebugJson)
     }
 
     func testUsageSnapshotNormalizationWithoutPrimary() {
-        // プライマリクォータ（TOKENS_5H）がない場合
+        // プライマリクォータ（TOKENS_LIMIT）がない場合
         let quotaData = QuotaData(limits: [
             QuotaLimit(
                 type: "WEB_SEARCH_MONTHLY",
@@ -403,7 +403,7 @@ final class UsageSnapshotTests: XCTestCase {
         // percentageフィールドがない場合の計算テスト
         let quotaData = QuotaData(limits: [
             QuotaLimit(
-                type: "TOKENS_5H",
+                type: "TOKENS_LIMIT",
                 percentage: nil,  // percentageなし
                 usage: 4230,
                 number: 10000,
@@ -423,7 +423,7 @@ final class UsageSnapshotTests: XCTestCase {
         // 複数セカンダリ枠のテスト
         let quotaData = QuotaData(limits: [
             QuotaLimit(
-                type: "TOKENS_5H",
+                type: "TOKENS_LIMIT",
                 percentage: 42.3,
                 usage: 4230,
                 number: 10000,
@@ -431,15 +431,15 @@ final class UsageSnapshotTests: XCTestCase {
                 nextResetTime: .seconds(1737118800)
             ),
             QuotaLimit(
-                type: "WEB_SEARCH_MONTHLY",
+                type: "TIME_LIMIT",
                 percentage: nil,
-                usage: 12,
-                number: 100,
-                remaining: 88,
+                usage: 1200,
+                number: 5000,
+                remaining: 3800,
                 nextResetTime: .iso8601("2026-02-01T00:00:00Z")
             ),
             QuotaLimit(
-                type: "READER_MONTHLY",
+                type: "WEB_SEARCH_MONTHLY",
                 percentage: 5.0,
                 usage: 5,
                 number: 100,
@@ -447,7 +447,7 @@ final class UsageSnapshotTests: XCTestCase {
                 nextResetTime: .milliseconds(1769904000000)
             ),
             QuotaLimit(
-                type: "ZREAD_MONTHLY",
+                type: "READER_MONTHLY",
                 percentage: nil,
                 usage: 0,
                 number: 50,
@@ -460,16 +460,16 @@ final class UsageSnapshotTests: XCTestCase {
 
         XCTAssertNotNil(snapshot)
         XCTAssertEqual(snapshot?.secondary.count, 3)
-        XCTAssertEqual(snapshot?.secondary[0].label, "Search (Monthly)")
-        XCTAssertEqual(snapshot?.secondary[1].label, "Reader (Monthly)")
-        XCTAssertEqual(snapshot?.secondary[2].label, "ZRead (Monthly)")
+        XCTAssertEqual(snapshot?.secondary[0].label, "Time Limit")
+        XCTAssertEqual(snapshot?.secondary[1].label, "Search (Monthly)")
+        XCTAssertEqual(snapshot?.secondary[2].label, "Reader (Monthly)")
     }
 
     func testUsageSnapshotNormalizationWithDebugJson() throws {
         // デバッグJSONオプションのテスト
         let quotaData = QuotaData(limits: [
             QuotaLimit(
-                type: "TOKENS_5H",
+                type: "TOKENS_LIMIT",
                 percentage: 42.3,
                 usage: 4230,
                 number: 10000,

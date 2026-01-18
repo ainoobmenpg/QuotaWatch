@@ -181,7 +181,8 @@ public struct QuotaLimit: Codable, Sendable {
     public let remaining: Double
 
     /// 次回リセット時刻（epoch秒/ミリ秒 or ISO8601文字列）
-    public let nextResetTime: ResetTimeValue
+    /// セカンダリクォータ等ではnilになる場合あり
+    public let nextResetTime: ResetTimeValue?
 
     public init(
         type: String,
@@ -189,7 +190,7 @@ public struct QuotaLimit: Codable, Sendable {
         usage: Double,
         number: Double,
         remaining: Double,
-        nextResetTime: ResetTimeValue
+        nextResetTime: ResetTimeValue?
     ) {
         self.type = type
         self.percentage = percentage
@@ -267,11 +268,14 @@ public struct ErrorResponse: Codable, Sendable, Equatable {
 
 // MARK: - ユーティリティ関数
 
-/// `ResetTimeValue`をepoch秒へ正規化
+/// `ResetTimeValue?`をepoch秒へ正規化
 ///
-/// - Parameter value: 正規化前のリセット時刻
-/// - Returns: epoch秒（パース失敗時はnil）
-public func normalizeResetTime(_ value: ResetTimeValue) -> Int? {
+/// - Parameter value: 正規化前のリセット時刻（オプショナル）
+/// - Returns: epoch秒（nilまたはパース失敗時はnil）
+public func normalizeResetTime(_ value: ResetTimeValue?) -> Int? {
+    guard let value = value else {
+        return nil
+    }
     switch value {
     case .seconds(let s):
         return s
@@ -308,19 +312,19 @@ public func calculatePercentage(percentage: Double?, usage: Double, total: Doubl
 
 /// Z.aiのプライマリクォータタイプ
 private enum PrimaryQuotaType: String {
-    case tokens5H = "TOKENS_5H"
+    case tokensLimit = "TOKENS_LIMIT"
 
     /// 指定されたタイプがプライマリかどうかを判定
     static func isPrimary(_ type: String) -> Bool {
-        return type == tokens5H.rawValue
+        return type == tokensLimit.rawValue
     }
 }
 
-/// タイプから表示用タイトルを生成（例: "TOKENS_5H" → "GLM 5h"）
+/// タイプから表示用タイトルを生成（例: "TOKENS_LIMIT" → "Tokens"）
 private func formatTitle(for type: String) -> String {
     switch type.uppercased() {
-    case "TOKENS_5H":
-        return "GLM 5h"
+    case "TOKENS_LIMIT":
+        return "Tokens"
     default:
         return type.replacingOccurrences(of: "_", with: " ").capitalized
     }
@@ -329,6 +333,10 @@ private func formatTitle(for type: String) -> String {
 /// セカンダリ枠のラベルを生成（例: "WEB_SEARCH_MONTHLY" → "Search (Monthly)"）
 private func formatSecondaryLabel(for type: String) -> String {
     switch type.uppercased() {
+    case "TIME_LIMIT":
+        return "Time Limit"
+    case "TOKENS_LIMIT":
+        return "Tokens Limit"
     case "WEB_SEARCH_MONTHLY":
         return "Search (Monthly)"
     case "READER_MONTHLY":

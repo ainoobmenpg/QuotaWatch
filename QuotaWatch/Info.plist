@@ -21,10 +21,14 @@
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSMinimumSystemVersion</key>
-	<real>26.199999999999999</real>
+	<string>26.2</string>
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSHumanReadableCopyright</key>
 	<string></string>
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)com.quotawatch.QuotaWatch</string>
+	</array>
 </dict>
 </plist>
