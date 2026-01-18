@@ -24,6 +24,7 @@
 		E6ECD1333158E07B12105BC1 /* ZaiProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03084E81161F967B5B48ED5E /* ZaiProviderTests.swift */; };
 		EEBD9834915593F61EC0CE26 /* KeychainStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72BB3FC6F6B1CE1A587A75A7 /* KeychainStoreTests.swift */; };
 		F349A5EC8CAE5FD78063E38B /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A0FF71040DBDFAF8CEDEAC2 /* AppState.swift */; };
+		F1A2B3C4D5E6F7A8B9C0D1E2 /* QuotaEngineBackoffTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1F2A3B4C5D6E7F8A9B0C1D2 /* QuotaEngineBackoffTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -57,6 +58,7 @@
 		B84EC1BAEA92871ACC4886F5 /* BackoffDecision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackoffDecision.swift; sourceTree = "<group>"; };
 		D70A7DDA3CB92446D2C299C2 /* UsageSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageSnapshotTests.swift; sourceTree = "<group>"; };
 		D876A7EE8D651909AD6EEF61 /* QuotaWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaWatchApp.swift; sourceTree = "<group>"; };
+		E1F2A3B4C5D6E7F8A9B0C1D2 /* QuotaEngineBackoffTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaEngineBackoffTests.swift; sourceTree = "<group>"; };
 		E34F5DB67BDD636763F2A294 /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
 		EF26D3EAE3AC08B9488B2154 /* QuotaWatchTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QuotaWatchTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -165,6 +167,7 @@
 			children = (
 				448E3DE91DB622191DA7A505 /* AppStateTests.swift */,
 				D70A7DDA3CB92446D2C299C2 /* UsageSnapshotTests.swift */,
+				E1F2A3B4C5D6E7F8A9B0C1D2 /* QuotaEngineBackoffTests.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -285,6 +288,7 @@
 				6A84EBA5771278B4B94B0D56 /* PersistenceManagerTests.swift in Sources */,
 				6B7B5A1CE785E84BCE718B7D /* UsageSnapshotTests.swift in Sources */,
 				E6ECD1333158E07B12105BC1 /* ZaiProviderTests.swift in Sources */,
+				F1A2B3C4D5E6F7A8B9C0D1E2 /* QuotaEngineBackoffTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

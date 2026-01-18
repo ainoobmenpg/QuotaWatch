@@ -16,8 +16,8 @@ public struct BackoffDecision: Sendable, Equatable {
         /// 通常リトライ（次回スケジュールで実行）
         case proceed
 
-        /// バックオフ待機
-        case backoff(wait: TimeInterval)
+        /// バックオフ待機（詳細はQuotaEngineで計算）
+        case backoff
 
         /// 停止（再試行なし）
         case stop
@@ -49,19 +49,14 @@ public struct BackoffDecision: Sendable, Equatable {
 
     /// バックオフ判定を生成
     ///
-    /// - Parameters:
-    ///   - factor: バックオフ係数（1, 2, 4, 8...）
-    ///   - baseInterval: 基本間隔（秒）
-    /// - Returns: バックオフ判定（最大15分 + ジッター）
-    public static func backoff(factor: Int, baseInterval: TimeInterval) -> Self {
-        let wait = baseInterval * Double(factor)
-        let cappedWait = min(wait, AppConstants.maxBackoffSeconds)
-        let jitter = Double.random(in: 0...AppConstants.jitterSeconds)
-        let totalWait = cappedWait + jitter
+    /// バックオフ計算はQuotaEngineの責務とし、Providerはエラー分類のみを行います。
+    ///
+    /// - Returns: バックオフ判定（QuotaEngineで間隔を計算）
+    public static func backoff() -> Self {
         return BackoffDecision(
-            action: .backoff(wait: totalWait),
+            action: .backoff,
             isRetryable: true,
-            description: "バックオフ中 (factor=\(factor), wait=\(Int(totalWait))秒)"
+            description: "バックオフ中"
         )
     }
 

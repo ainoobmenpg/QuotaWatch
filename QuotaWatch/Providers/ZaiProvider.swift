@@ -111,7 +111,7 @@ public struct ZaiProvider: Provider {
         switch error {
         case .httpError(let statusCode) where statusCode == 429:
             Self.logger.warning("レート制限判定: HTTP 429")
-            return .backoff(factor: 1, baseInterval: 60)
+            return .backoff()
 
         case .networkError, .decodingError:
             Self.logger.debug("非レートエラー: 通常リトライ")

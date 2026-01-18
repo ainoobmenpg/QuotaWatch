@@ -263,11 +263,18 @@ public actor QuotaEngine {
             let interval = calculateNextFetchInterval()
             state.nextFetchEpoch = Date().epochSeconds + Int(interval)
 
-        case .backoff(let wait):
+        case .backoff:
             // バックオフ: バックオフ係数を倍増（上限15）
-            self.state.backoffFactor = min(self.state.backoffFactor * 2, 15)
-            self.state.nextFetchEpoch = Date().epochSeconds + Int(wait)
-            logger.warning("バックオフ適用: factor=\(self.state.backoffFactor), wait=\(Int(wait))秒")
+            let newFactor = self.state.backoffFactor * 2
+            self.state.backoffFactor = min(newFactor, 15)
+
+            // バックオフ間隔を計算して次回フェッチ時刻を設定
+            let interval = calculateBackoffInterval()
+            self.state.nextFetchEpoch = Date().epochSeconds + Int(interval)
+
+            logger.warning(
+                "バックオフ適用: factor=\(self.state.backoffFactor), nextFetch=\(self.state.nextFetchEpoch)"
+            )
 
         case .stop:
             // 停止: 致命的エラーとして扱う
@@ -292,6 +299,27 @@ public actor QuotaEngine {
     /// - Returns: フェッチ間隔（秒）
     private func calculateNextFetchInterval() -> TimeInterval {
         return baseInterval
+    }
+
+    /// バックオフ時のフェッチ間隔を計算
+    ///
+    /// - Returns: フェッチ間隔（秒）。バックオフ係数、最大値、ジッターを考慮
+    private func calculateBackoffInterval() -> TimeInterval {
+        // 計算式: baseInterval * backoffFactor
+        let wait = baseInterval * Double(state.backoffFactor)
+
+        // 最大値でクリップ
+        let cappedWait = min(wait, AppConstants.maxBackoffSeconds)
+
+        // ジッターを追加（0-15秒）
+        let jitter = Double.random(in: 0...AppConstants.jitterSeconds)
+        let totalWait = cappedWait + jitter
+
+        logger.debug(
+            "バックオフ間隔計算: factor=\(self.state.backoffFactor), wait=\(Int(wait))秒, capped=\(Int(cappedWait))秒, jitter=\(Int(jitter))秒, total=\(Int(totalWait))秒"
+        )
+
+        return totalWait
     }
 
     // MARK: - 内部メソッド - 復旧
