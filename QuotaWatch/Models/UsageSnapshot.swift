@@ -69,7 +69,10 @@ public struct UsageSnapshot: Codable, Equatable, Sendable {
 }
 
 /// セカンダリクォータ制限
-public struct UsageLimit: Codable, Equatable, Sendable {
+public struct UsageLimit: Codable, Equatable, Sendable, Identifiable {
+    /// 一意識別子（Codableには含まれない）
+    public let id = UUID()
+
     /// ラベル（例: "Search (Monthly)"）
     public let label: String
 
@@ -102,6 +105,12 @@ public struct UsageLimit: Codable, Equatable, Sendable {
         self.total = total
         self.remaining = remaining
         self.resetEpoch = resetEpoch
+    }
+
+    // MARK: - Codable
+
+    enum CodingKeys: String, CodingKey {
+        case label, pct, used, total, remaining, resetEpoch
     }
 }
 
