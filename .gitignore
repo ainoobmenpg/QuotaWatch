@@ -21,3 +21,7 @@ Pods/
 # その他
 *.swp
 *~
+
+# Xcode 生成ファイル（バックアップ・重複・テンプレート）
+*.bak/
+*Tests/QuotaWatchTests.swift

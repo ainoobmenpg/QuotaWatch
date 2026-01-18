@@ -18,16 +18,31 @@ targets:
       INFOPLIST_FILE: QuotaWatch/Info.plist
       CODE_SIGN_ENTITLEMENTS: QuotaWatch/QuotaWatch.entitlements
       ENABLE_APP_SANDBOX: YES
-    sources:
-      - path: "QuotaWatch"
+    sources: QuotaWatch
     entitlements:
-      com.apple.security.app-sandbox: true
-      com.apple.security.network.client: true
+      path: QuotaWatch/QuotaWatch.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
     info:
-      CFBundleName: QuotaWatch
-      CFBundleDisplayName: QuotaWatch
-      CFBundleShortVersionString: $(MARKETING_VERSION)
-      CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-      LSMinimumSystemVersion: 26.2
-      LSUIElement: true
-      NSHumanReadableCopyright: ""
+      path: QuotaWatch/Info.plist
+      properties:
+        CFBundleName: QuotaWatch
+        CFBundleDisplayName: QuotaWatch
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSMinimumSystemVersion: 26.2
+        LSUIElement: true
+        NSHumanReadableCopyright: ""
+
+  QuotaWatchTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "26.2"
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.quotawatch.QuotaWatchTests
+      SWIFT_VERSION: "6.0"
+      INFOPLIST_FILE: QuotaWatchTests/Info.plist
+    sources: QuotaWatchTests
+    dependencies:
+      - target: QuotaWatch
