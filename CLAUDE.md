@@ -156,8 +156,9 @@ gh issue close <Issue番号> --comment "完了コメント"
 git checkout main
 git pull origin main
 
-# 4. ローカルの不要ブランチを削除
+# 4. ブランチを削除（ローカル・リモート）
 git branch -d <ブランチ名>
+git push origin --delete <ブランチ名>
 ```
 
 ## 実装タスク順序
