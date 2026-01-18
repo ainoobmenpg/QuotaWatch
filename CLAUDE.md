@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **QuotaWatch** は、macOSのメニューバー常駐アプリで、AIサービス（Z.ai/GLM）のクォータ使用状況を監視・表示するアプリケーションです。SwiftBarプラグインをネイティブSwiftUIアプリ（MenuBarExtra）に置換することが目的です。
 
-**現在の状態**: 設計ドキュメント段階。実装コードはまだ存在しません。設計書は `quota-watch-menubar-docs/` にあります。
+**現在の状態**: 実装中。設計書は `quota-watch-menubar-docs/` にあります。
 
 ## 対象環境
 
@@ -128,6 +128,37 @@ UI/通知が参照する唯一のモデル:
 - **OSLog** でカテゴリ別ロギング
 - **async/await** を優先
 - **actor** による競合回避
+
+## Gitワークフロー
+
+### 作業開始時
+
+```bash
+# mainを最新にする
+git checkout main
+git pull origin main
+
+# 作業ブランチを作成（feature-xxx または issue-N-xxx）
+git checkout -b feature-xxx  # または issue-N-xxx
+```
+
+### 作業完了時
+
+```bash
+# 1. PRを作成してマージ
+gh pr create --title "タイトル" --body "説明"
+gh pr merge <PR番号> --squash --delete-branch
+
+# 2. 関連IssueをClose（あれば）
+gh issue close <Issue番号> --comment "完了コメント"
+
+# 3. mainブランチへ戻して最新にする
+git checkout main
+git pull origin main
+
+# 4. ローカルの不要ブランチを削除
+git branch -d <ブランチ名>
+```
 
 ## 実装タスク順序
 
