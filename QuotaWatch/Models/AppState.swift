@@ -27,6 +27,9 @@ public struct AppState: Codable, Sendable, Equatable {
     /// 最終通知時刻（epoch秒）
     public var lastNotifiedResetEpoch: Int
 
+    /// 連続失敗カウンター
+    public var consecutiveFailureCount: Int
+
     /// デフォルト値で初期化
     public init() {
         let now = Date().epochSeconds
@@ -36,5 +39,25 @@ public struct AppState: Codable, Sendable, Equatable {
         self.lastError = ""
         self.lastKnownResetEpoch = 0
         self.lastNotifiedResetEpoch = 0
+        self.consecutiveFailureCount = 0
+    }
+
+    /// 値を指定して初期化（テスト用）
+    public init(
+        nextFetchEpoch: Int,
+        backoffFactor: Int,
+        lastFetchEpoch: Int,
+        lastError: String,
+        lastKnownResetEpoch: Int,
+        lastNotifiedResetEpoch: Int,
+        consecutiveFailureCount: Int
+    ) {
+        self.nextFetchEpoch = nextFetchEpoch
+        self.backoffFactor = backoffFactor
+        self.lastFetchEpoch = lastFetchEpoch
+        self.lastError = lastError
+        self.lastKnownResetEpoch = lastKnownResetEpoch
+        self.lastNotifiedResetEpoch = lastNotifiedResetEpoch
+        self.consecutiveFailureCount = consecutiveFailureCount
     }
 }

@@ -12,57 +12,6 @@ import XCTest
 
 /// QuotaEngineのバックオフ計算ロジックをテストするクラス
 final class QuotaEngineBackoffTests: XCTestCase {
-    // MARK: - 依存関係のモック
-
-    /// Mock Provider
-    final class MockProvider: @unchecked Sendable, Provider {
-        let id = "mock"
-        let displayName = "Mock"
-        let dashboardURL: URL? = URL(string: "https://mock.example.com")
-        let keychainService = "mock_api_key"
-
-        // エラー挙動を制御するためのプロパティ（@unchecked Sendableで安全性は呼び出し元が保証）
-        var shouldThrowRateLimit = false
-        var shouldThrowNetworkError = false
-        var fetchCount = 0
-
-        func fetchUsage(apiKey: String) async throws -> UsageSnapshot {
-            fetchCount += 1
-
-            if shouldThrowRateLimit {
-                throw ProviderError.httpError(statusCode: 429)
-            }
-            if shouldThrowNetworkError {
-                throw ProviderError.networkError(underlying: NSError(domain: "test", code: -1))
-            }
-
-            // 成功時はダミーのスナップショットを返す
-            return UsageSnapshot(
-                providerId: "mock",
-                fetchedAtEpoch: Int(Date().timeIntervalSince1970),
-                primaryTitle: "Mock Quota",
-                primaryPct: 50,
-                primaryUsed: 50.0,
-                primaryTotal: 100.0,
-                primaryRemaining: 50.0,
-                resetEpoch: nil,
-                secondary: [],
-                rawDebugJson: nil
-            )
-        }
-
-        func classifyBackoff(error: ProviderError) -> BackoffDecision {
-            switch error {
-            case .httpError(let statusCode) where statusCode == 429:
-                return .backoff()
-            case .networkError:
-                return .proceed()
-            default:
-                return .proceed()
-            }
-        }
-    }
-
     // MARK: - テストヘルパー
 
     /// テスト用に独立したQuotaEngineインスタンスを作成

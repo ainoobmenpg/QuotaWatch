@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import AppKit
 import OSLog
 
 // MARK: - QuotaEngineError
@@ -61,6 +62,18 @@ public actor QuotaEngine {
     /// 基本フェッチ間隔（秒）
     private var baseInterval: TimeInterval
 
+    /// Clock（ContinuousClock固定）
+    /// 注: テスト容易性のためClockプロトコルを使用したいが、
+    /// Swift 6の存在型制限により、暫定的にContinuousClockを直接使用します。
+    /// 将来的には Clock プロトコルを使用してテスト容易性を向上させる予定です。
+    private let clock: ContinuousClock
+
+    /// runLoopのTask参照
+    private var runLoopTask: Task<Void, Never>?
+
+    /// スリープ復帰検知用オブザーバー
+    private var sleepObserver: NSObjectProtocol?
+
     // MARK: - ロガー
 
     private let logger = Logger(subsystem: "com.quotawatch.engine", category: "QuotaEngine")
@@ -73,14 +86,17 @@ public actor QuotaEngine {
     ///   - provider: Provider（Z.ai等）
     ///   - persistence: 永続化管理
     ///   - keychain: APIキーストア
+    ///   - clock: Clock（デフォルト: ContinuousClock）
     public init(
         provider: Provider,
         persistence: PersistenceManager,
-        keychain: KeychainStore
+        keychain: KeychainStore,
+        clock: ContinuousClock = ContinuousClock()
     ) async {
         self.provider = provider
         self.persistence = persistence
         self.keychain = keychain
+        self.clock = clock
         self.baseInterval = AppConstants.minBaseInterval
 
         // 状態を復元
@@ -329,6 +345,7 @@ public actor QuotaEngine {
     /// 初期化時に以下を行います：
     /// 1. キャッシュファイルからスナップショットを復元
     /// 2. `nextFetchEpoch`が過去の場合、現在時刻に補正
+    /// 3. 連続失敗カウンターが閾値以上の場合、リセット
     private func recoverFromCrash() async {
         logger.debug("復旧処理開始")
 
@@ -345,8 +362,16 @@ public actor QuotaEngine {
         if self.state.nextFetchEpoch < now {
             logger.debug("nextFetchEpochが過去のため、現在時刻に補正: \(self.state.nextFetchEpoch) -> \(now)")
             self.state.nextFetchEpoch = now
-            try? await persistence.saveState(self.state)
         }
+
+        // 連続失敗カウンターが閾値以上の場合、リセット
+        if self.state.consecutiveFailureCount >= AppConstants.maxConsecutiveFailures {
+            logger.log("連続失敗カウンターが閾値(\(AppConstants.maxConsecutiveFailures))以上のため、リセットします")
+            self.state.consecutiveFailureCount = 0
+        }
+
+        // 状態を保存
+        try? await persistence.saveState(self.state)
 
         logger.log("復旧処理完了: nextFetch=\(self.state.nextFetchEpoch)")
     }
@@ -360,6 +385,169 @@ public actor QuotaEngine {
         let clamped = max(interval, AppConstants.minBaseInterval)
         self.baseInterval = clamped
         logger.debug("基本フェッチ間隔を更新: \(Int(clamped))秒")
+    }
+
+    // MARK: - 公開API - runLoop制御
+
+    /// runLoopを開始
+    ///
+    /// 定期フェッチを実行するループを開始し、スリープ復帰検知を設定します。
+    public func startRunLoop() {
+        // 既に実行中の場合は何もしない
+        guard runLoopTask == nil else {
+            logger.debug("runLoopは既に実行中です")
+            return
+        }
+
+        logger.log("runLoopを開始します")
+
+        // runLoopタスクを開始
+        runLoopTask = Task {
+            await runLoop()
+        }
+
+        // スリープ復帰検知を設定
+        setupSleepObserver()
+    }
+
+    /// runLoopを停止
+    ///
+    /// 実行中のループをキャンセルし、通知監視を解除します。
+    public func stopRunLoop() async {
+        logger.log("runLoopを停止します")
+
+        // タスクをキャンセル
+        runLoopTask?.cancel()
+        runLoopTask = nil
+
+        // 通知監視を解除
+        if let observer = sleepObserver {
+            NotificationCenter.default.removeObserver(observer)
+            sleepObserver = nil
+            logger.debug("スリープ復帰検知を解除しました")
+        }
+
+        // 状態を永続化（完了を待つ）
+        do {
+            try await persistence.saveState(state)
+            logger.log("runLoop停止: 状態を永続化しました")
+        } catch {
+            logger.error("runLoop停止: 状態の永続化に失敗: \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - 内部メソッド - runLoop
+
+    /// メインループ実装
+    ///
+    /// 設定された間隔で定期フェッチを実行します。
+    /// `ContinuousClock.sleep(until:)` で次回フェッチ時刻まで待機し、
+    /// Taskキャンセルに対応します。
+    private func runLoop() async {
+        logger.log("runLoop: 開始")
+
+        // キャンセル時のクリーンアップ
+        defer {
+            logger.log("runLoop: 終了")
+        }
+
+        // メインループ
+        while !Task.isCancelled {
+            do {
+                // フェッチ時刻まで待機
+                let nowEpoch = Date().epochSeconds
+                let nextFetchEpoch = state.nextFetchEpoch
+
+                if nextFetchEpoch > nowEpoch {
+                    let waitSeconds = nextFetchEpoch - nowEpoch
+                    logger.debug("runLoop: \(waitSeconds)秒間スリープします")
+
+                    // 指定時刻までスリープ
+                    let deadline = self.clock.now.advanced(by: .seconds(Int64(waitSeconds)))
+                    _ = try? await self.clock.sleep(until: deadline, tolerance: nil)
+
+                    // キャンセルチェック
+                    if Task.isCancelled {
+                        logger.debug("runLoop: キャンセル検出（スリープ中）")
+                        break
+                    }
+                }
+
+                // フェッチ実行
+                logger.debug("runLoop: フェッチを実行します")
+                _ = try await fetch()
+
+                // 成功時に連続失敗カウンターをリセット
+                if state.consecutiveFailureCount > 0 {
+                    state.consecutiveFailureCount = 0
+                    try? await persistence.saveState(state)
+                }
+
+                // キャンセルチェック（フェッチ後）
+                if Task.isCancelled {
+                    logger.debug("runLoop: キャンセル検出（フェッチ後）")
+                    break
+                }
+
+            } catch {
+                // 連続失敗カウンターをインクリメント
+                state.consecutiveFailureCount += 1
+
+                // 閾値チェック
+                if state.consecutiveFailureCount >= AppConstants.maxConsecutiveFailures {
+                    logger.error("runLoop: 連続失敗が閾値(\(AppConstants.maxConsecutiveFailures))に達したため、ループを停止します")
+                    try? await persistence.saveState(state)
+                    break
+                }
+
+                // 状態を永続化
+                try? await persistence.saveState(state)
+
+                // エラー時もループは継続
+                logger.error("runLoop: フェッチエラー: \(error.localizedDescription)")
+
+                // キャンセルチェック
+                if Task.isCancelled {
+                    logger.debug("runLoop: キャンセル検出（エラーハンドリング中）")
+                    break
+                }
+            }
+        }
+    }
+
+    // MARK: - 内部メソッド - スリープ復帰検知
+
+    /// スリープ復帰検知用の通知監視を設定
+    ///
+    /// Actor内で直接NotificationCenterを使用できないため、
+    /// ダミーパススルー関数を経由して設定します。
+    ///
+    /// 注: Swift 6のactorとMainActorの相互作用により、
+    /// スリープ復帰検知は暫定的に無効化しています。
+    /// 将来的に別のアプローチで実装する予定です。
+    private func setupSleepObserver() {
+        // TODO: #16 Swift 6のactorモデルに対応したスリープ復帰検知を実装
+        logger.debug("スリープ復帰検知は暫定的に無効化されています（Issue #16）")
+    }
+
+    /// スリープ復帰ハンドラ
+    ///
+    /// 復帰時、現在時刻が次回フェッチ時刻以上の場合は即時フェッチを実行します。
+    private func handleWake() async {
+        logger.log("スリープから復帰しました")
+
+        let now = Date().epochSeconds
+        if now >= state.nextFetchEpoch {
+            logger.log("スリープ復帰時: フェッチ時刻到達、即時フェッチを実行します")
+            do {
+                _ = try await fetch()
+            } catch {
+                logger.error("スリープ復帰時のフェッチエラー: \(error.localizedDescription)")
+            }
+        } else {
+            let waitSeconds = state.nextFetchEpoch - now
+            logger.debug("スリープ復帰時: 次回フェッチまで\(waitSeconds)秒")
+        }
     }
 
     // MARK: - テストヘルパー（DEBUGビルドのみ）
