@@ -6,9 +6,11 @@ struct QuotaWatchApp: App {
     @State private var viewModel: ContentViewModel?
     @State private var initializationError: Error?
     @State private var isInitializing = false
+    private static let defaultMenuBarTitle = "QuotaWatch..."
+    @State private var menuBarTitle: String = defaultMenuBarTitle
 
     var body: some Scene {
-        MenuBarExtra("QuotaWatch", systemImage: "chart.bar") {
+        MenuBarExtra(menuBarTitle, systemImage: "chart.bar") {
             MenuBarView(
                 viewModel: viewModel,
                 initializationError: initializationError,
@@ -19,6 +21,16 @@ struct QuotaWatchApp: App {
                 if viewModel == nil && !isInitializing {
                     Task { await setupEngine() }
                 }
+            }
+        }
+        .onChange(of: viewModel) { _, newViewModel in
+            if let title = newViewModel?.menuBarTitle {
+                menuBarTitle = title
+            }
+        }
+        .onChange(of: viewModel?.menuBarTitle) { _, newTitle in
+            if let newTitle = newTitle {
+                menuBarTitle = newTitle
             }
         }
     }

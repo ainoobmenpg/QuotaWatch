@@ -173,3 +173,12 @@ public final class ContentViewModel: ObservableObject {
         await updateState()
     }
 }
+
+// MARK: - Equatable
+
+extension ContentViewModel: Equatable {
+    nonisolated public static func == (lhs: ContentViewModel, rhs: ContentViewModel) -> Bool {
+        // 参照等価性（同じインスタンスかどうか）
+        lhs === rhs
+    }
+}
