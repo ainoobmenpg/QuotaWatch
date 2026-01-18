@@ -11,6 +11,8 @@
 		6B7B5A1CE785E84BCE718B7D /* UsageSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D70A7DDA3CB92446D2C299C2 /* UsageSnapshotTests.swift */; };
 		6F378D55F6655927CF239C91 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4D7D094C9F4D41317224B398 /* Assets.xcassets */; };
 		A444AC373B13252291BBDCD2 /* UsageSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8E7010C302908F9B1559BBD /* UsageSnapshot.swift */; };
+		B5E7F2A18D4C3E9F6A3B7C4D /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3F8D9E27B1A4C5D9E6F8A7B /* KeychainStore.swift */; };
+		E9D4C7B3A5F2E8D1C6B9A4E7 /* KeychainStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7A3E8D4C6B1A9E2D5F4C8B3 /* KeychainStoreTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -30,9 +32,11 @@
 		883076AE5C0DD6C6140D4E82 /* QuotaWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = QuotaWatch.entitlements; sourceTree = "<group>"; };
 		98CF57FDC73CB5839DFAE561 /* QuotaWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuotaWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A8E7010C302908F9B1559BBD /* UsageSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageSnapshot.swift; sourceTree = "<group>"; };
+		C3F8D9E27B1A4C5D9E6F8A7B /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
 		D70A7DDA3CB92446D2C299C2 /* UsageSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageSnapshotTests.swift; sourceTree = "<group>"; };
 		D876A7EE8D651909AD6EEF61 /* QuotaWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaWatchApp.swift; sourceTree = "<group>"; };
 		EF26D3EAE3AC08B9488B2154 /* QuotaWatchTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QuotaWatchTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F7A3E8D4C6B1A9E2D5F4C8B3 /* KeychainStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStoreTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -49,9 +53,26 @@
 			isa = PBXGroup;
 			children = (
 				77AF032198079B03D6BAD5D8 /* Info.plist */,
-				F42DFA1EB2F45BAE92106AA2 /* Models */,
+				3E8C5D2A7F4B9E1A6C7D8B9E /* Models */,
+				7A9F4E3C8D2B6C1A5E8F7A3B /* Stores */,
 			);
 			path = QuotaWatchTests;
+			sourceTree = "<group>";
+		};
+		3E8C5D2A7F4B9E1A6C7D8B9E /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				D70A7DDA3CB92446D2C299C2 /* UsageSnapshotTests.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		7A9F4E3C8D2B6C1A5E8F7A3B /* Stores */ = {
+			isa = PBXGroup;
+			children = (
+				F7A3E8D4C6B1A9E2D5F4C8B3 /* KeychainStoreTests.swift */,
+			);
+			path = Stores;
 			sourceTree = "<group>";
 		};
 		AA8BF28402509C84884AC113 /* Models */ = {
@@ -70,8 +91,17 @@
 				883076AE5C0DD6C6140D4E82 /* QuotaWatch.entitlements */,
 				D876A7EE8D651909AD6EEF61 /* QuotaWatchApp.swift */,
 				AA8BF28402509C84884AC113 /* Models */,
+				9C7D3E4A8B5F2E6C9D1A7E4F /* Stores */,
 			);
 			path = QuotaWatch;
+			sourceTree = "<group>";
+		};
+		9C7D3E4A8B5F2E6C9D1A7E4F /* Stores */ = {
+			isa = PBXGroup;
+			children = (
+				C3F8D9E27B1A4C5D9E6F8A7B /* KeychainStore.swift */,
+			);
+			path = Stores;
 			sourceTree = "<group>";
 		};
 		F42DFA1EB2F45BAE92106AA2 /* Models */ = {
@@ -177,6 +207,7 @@
 			files = (
 				4B06086F20DE6659FCA2227B /* QuotaWatchApp.swift in Sources */,
 				A444AC373B13252291BBDCD2 /* UsageSnapshot.swift in Sources */,
+				B5E7F2A18D4C3E9F6A3B7C4D /* KeychainStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -185,6 +216,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6B7B5A1CE785E84BCE718B7D /* UsageSnapshotTests.swift in Sources */,
+				E9D4C7B3A5F2E8D1C6B9A4E7 /* KeychainStoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
