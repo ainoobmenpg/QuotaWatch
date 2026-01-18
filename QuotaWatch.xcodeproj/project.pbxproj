@@ -13,6 +13,11 @@
 		A444AC373B13252291BBDCD2 /* UsageSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8E7010C302908F9B1559BBD /* UsageSnapshot.swift */; };
 		B5E7F2A18D4C3E9F6A3B7C4D /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3F8D9E27B1A4C5D9E6F8A7B /* KeychainStore.swift */; };
 		E9D4C7B3A5F2E8D1C6B9A4E7 /* KeychainStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7A3E8D4C6B1A9E2D5F4C8B3 /* KeychainStoreTests.swift */; };
+		1A2B3C4D5E6F7081A2B3C4D /* BackoffDecision.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A8B7C6D5E4F3021A2B3C4D /* BackoffDecision.swift */; };
+		2B3C4D5E6F70819B2C3D4E5 /* ProviderError.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F607182A3B4C5D /* ProviderError.swift */; };
+		3C4D5E6F708192C3D4E5F6 /* Provider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F60718293C4D5E6F /* Provider.swift */; };
+		4D5E6F708192A3C4D5E6F70 /* ZaiProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3D4E5F607182A3D4E5F670 /* ZaiProvider.swift */; };
+		5E6F708192A3B4D5E6F7081 /* ZaiProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F607182A3B4E5F67081 /* ZaiProviderTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -37,6 +42,11 @@
 		D876A7EE8D651909AD6EEF61 /* QuotaWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaWatchApp.swift; sourceTree = "<group>"; };
 		EF26D3EAE3AC08B9488B2154 /* QuotaWatchTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QuotaWatchTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F7A3E8D4C6B1A9E2D5F4C8B3 /* KeychainStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStoreTests.swift; sourceTree = "<group>"; };
+		9A8B7C6D5E4F3021A2B3C4D /* BackoffDecision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackoffDecision.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F607182A3B4C5D /* ProviderError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderError.swift; sourceTree = "<group>"; };
+		B2C3D4E5F60718293C4D5E6F /* Provider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Provider.swift; sourceTree = "<group>"; };
+		C3D4E5F607182A3D4E5F670 /* ZaiProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZaiProvider.swift; sourceTree = "<group>"; };
+		D4E5F607182A3B4E5F67081 /* ZaiProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZaiProviderTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -55,6 +65,7 @@
 				77AF032198079B03D6BAD5D8 /* Info.plist */,
 				3E8C5D2A7F4B9E1A6C7D8B9E /* Models */,
 				7A9F4E3C8D2B6C1A5E8F7A3B /* Stores */,
+				E1F2A3B4C5D607182A3B4C5 /* Providers */,
 			);
 			path = QuotaWatchTests;
 			sourceTree = "<group>";
@@ -92,6 +103,7 @@
 				D876A7EE8D651909AD6EEF61 /* QuotaWatchApp.swift */,
 				AA8BF28402509C84884AC113 /* Models */,
 				9C7D3E4A8B5F2E6C9D1A7E4F /* Stores */,
+				1A2B3C4D5E6F708192B3C4D5 /* Providers */,
 			);
 			path = QuotaWatch;
 			sourceTree = "<group>";
@@ -104,12 +116,31 @@
 			path = Stores;
 			sourceTree = "<group>";
 		};
+		1A2B3C4D5E6F708192B3C4D5 /* Providers */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F607182A3B4C5D /* ProviderError.swift */,
+				9A8B7C6D5E4F3021A2B3C4D /* BackoffDecision.swift */,
+				B2C3D4E5F60718293C4D5E6F /* Provider.swift */,
+				C3D4E5F607182A3D4E5F670 /* ZaiProvider.swift */,
+			);
+			path = Providers;
+			sourceTree = "<group>";
+		};
 		F42DFA1EB2F45BAE92106AA2 /* Models */ = {
 			isa = PBXGroup;
 			children = (
 				D70A7DDA3CB92446D2C299C2 /* UsageSnapshotTests.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		E1F2A3B4C5D607182A3B4C5 /* Providers */ = {
+			isa = PBXGroup;
+			children = (
+				D4E5F607182A3B4E5F67081 /* ZaiProviderTests.swift */,
+			);
+			path = Providers;
 			sourceTree = "<group>";
 		};
 		FD566E86643CFA5FDC000C88 /* Products */ = {
@@ -208,6 +239,10 @@
 				4B06086F20DE6659FCA2227B /* QuotaWatchApp.swift in Sources */,
 				A444AC373B13252291BBDCD2 /* UsageSnapshot.swift in Sources */,
 				B5E7F2A18D4C3E9F6A3B7C4D /* KeychainStore.swift in Sources */,
+				2B3C4D5E6F70819B2C3D4E5 /* ProviderError.swift in Sources */,
+				1A2B3C4D5E6F7081A2B3C4D /* BackoffDecision.swift in Sources */,
+				3C4D5E6F708192C3D4E5F6 /* Provider.swift in Sources */,
+				4D5E6F708192A3C4D5E6F70 /* ZaiProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -217,6 +252,7 @@
 			files = (
 				6B7B5A1CE785E84BCE718B7D /* UsageSnapshotTests.swift in Sources */,
 				E9D4C7B3A5F2E8D1C6B9A4E7 /* KeychainStoreTests.swift in Sources */,
+				5E6F708192A3B4D5E6F7081 /* ZaiProviderTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
