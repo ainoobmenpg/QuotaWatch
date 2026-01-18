@@ -303,3 +303,120 @@ extension Date {
         return Int(timeIntervalSince1970)
     }
 }
+
+// MARK: - 正規化サポート
+
+/// Z.aiのプライマリクォータタイプ
+private enum PrimaryQuotaType: String {
+    case tokens5H = "TOKENS_5H"
+
+    /// 指定されたタイプがプライマリかどうかを判定
+    static func isPrimary(_ type: String) -> Bool {
+        return type == tokens5H.rawValue
+    }
+}
+
+/// タイプから表示用タイトルを生成（例: "TOKENS_5H" → "GLM 5h"）
+private func formatTitle(for type: String) -> String {
+    switch type.uppercased() {
+    case "TOKENS_5H":
+        return "GLM 5h"
+    default:
+        return type.replacingOccurrences(of: "_", with: " ").capitalized
+    }
+}
+
+/// セカンダリ枠のラベルを生成（例: "WEB_SEARCH_MONTHLY" → "Search (Monthly)"）
+private func formatSecondaryLabel(for type: String) -> String {
+    switch type.uppercased() {
+    case "WEB_SEARCH_MONTHLY":
+        return "Search (Monthly)"
+    case "READER_MONTHLY":
+        return "Reader (Monthly)"
+    case "ZREAD_MONTHLY":
+        return "ZRead (Monthly)"
+    default:
+        let formatted = type
+            .replacingOccurrences(of: "_", with: " ")
+            .lowercased()
+            .capitalized
+        if formatted.contains("Monthly") {
+            return formatted.replacingOccurrences(of: "Monthly", with: "(Monthly)")
+        }
+        return formatted
+    }
+}
+
+// MARK: - UsageSnapshot正規化
+
+extension UsageSnapshot {
+    /// Z.aiのQuotaDataからUsageSnapshotを生成
+    ///
+    /// - Parameters:
+    ///   - quotaData: Z.ai APIレスポンスのデータ部分
+    ///   - providerId: プロバイダ識別子（デフォルト: "zai"）
+    ///   - includeDebugJson: デバッグJSONを含めるか（デフォルト: false）
+    /// - Returns: 正規化されたUsageSnapshot。プライマリクォータがない場合はnil
+    public init?(from quotaData: QuotaData, providerId: String = "zai", includeDebugJson: Bool = false) {
+        let fetchedAtEpoch = Date().epochSeconds
+
+        // プライマリとセカンダリを分類
+        var primary: QuotaLimit?
+        var secondaryItems: [QuotaLimit] = []
+
+        for limit in quotaData.limits {
+            if PrimaryQuotaType.isPrimary(limit.type) {
+                primary = limit
+            } else {
+                secondaryItems.append(limit)
+            }
+        }
+
+        // プライマリが必須
+        guard let primaryLimit = primary else {
+            return nil
+        }
+
+        // プライマリ情報の設定
+        self.providerId = providerId
+        self.fetchedAtEpoch = fetchedAtEpoch
+        self.primaryTitle = formatTitle(for: primaryLimit.type)
+        self.primaryPct = calculatePercentage(
+            percentage: primaryLimit.percentage,
+            usage: primaryLimit.usage,
+            total: primaryLimit.number
+        )
+        self.primaryUsed = primaryLimit.usage
+        self.primaryTotal = primaryLimit.number
+        self.primaryRemaining = primaryLimit.remaining
+        self.resetEpoch = normalizeResetTime(primaryLimit.nextResetTime)
+
+        // セカンダリ枠の正規化
+        self.secondary = secondaryItems.map { limit in
+            UsageLimit(
+                label: formatSecondaryLabel(for: limit.type),
+                pct: calculatePercentage(
+                    percentage: limit.percentage,
+                    usage: limit.usage,
+                    total: limit.number
+                ),
+                used: limit.usage,
+                total: limit.number,
+                remaining: limit.remaining,
+                resetEpoch: normalizeResetTime(limit.nextResetTime)
+            )
+        }
+
+        // デバッグJSON（オプション）
+        if includeDebugJson {
+            if let jsonData = try? JSONEncoder().encode(quotaData),
+               let jsonString = String(data: jsonData, encoding: .utf8) {
+                self.rawDebugJson = jsonString
+            } else {
+                self.rawDebugJson = nil
+            }
+        } else {
+            self.rawDebugJson = nil
+        }
+    }
+}

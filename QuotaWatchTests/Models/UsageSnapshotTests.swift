@@ -337,6 +337,158 @@ final class UsageSnapshotTests: XCTestCase {
         }
     }
 
+    // MARK: - 正規化ロジックテスト
+
+    func testUsageSnapshotNormalizationFromQuotaData() throws {
+        // api_sample.json ベースのテストデータ
+        let quotaData = QuotaData(limits: [
+            QuotaLimit(
+                type: "TOKENS_5H",
+                percentage: 42.3,
+                usage: 4230,
+                number: 10000,
+                remaining: 5770,
+                nextResetTime: .seconds(1737118800)
+            ),
+            QuotaLimit(
+                type: "WEB_SEARCH_MONTHLY",
+                percentage: nil,
+                usage: 12,
+                number: 100,
+                remaining: 88,
+                nextResetTime: .iso8601("2026-02-01T00:00:00Z")
+            ),
+        ])
+
+        let snapshot = UsageSnapshot(from: quotaData)
+
+        XCTAssertNotNil(snapshot)
+        XCTAssertEqual(snapshot?.providerId, "zai")
+        XCTAssertEqual(snapshot?.primaryTitle, "GLM 5h")
+        XCTAssertEqual(snapshot?.primaryPct, 42)
+        XCTAssertEqual(snapshot?.primaryUsed, 4230.0)
+        XCTAssertEqual(snapshot?.primaryTotal, 10000.0)
+        XCTAssertEqual(snapshot?.primaryRemaining, 5770.0)
+        XCTAssertEqual(snapshot?.resetEpoch, 1737118800)
+        XCTAssertEqual(snapshot?.secondary.count, 1)
+        XCTAssertEqual(snapshot?.secondary[0].label, "Search (Monthly)")
+        XCTAssertEqual(snapshot?.secondary[0].pct, 12)  // 計算: floor(100 * 12 / 100) = 12
+        XCTAssertEqual(snapshot?.secondary[0].used, 12.0)
+        XCTAssertEqual(snapshot?.secondary[0].total, 100.0)
+        XCTAssertEqual(snapshot?.secondary[0].remaining, 88.0)
+        // 2026-02-01 00:00:00 UTC = 1769904000 (epoch秒)
+        XCTAssertEqual(snapshot?.secondary[0].resetEpoch, 1769904000)
+        XCTAssertNil(snapshot?.rawDebugJson)
+    }
+
+    func testUsageSnapshotNormalizationWithoutPrimary() {
+        // プライマリクォータ（TOKENS_5H）がない場合
+        let quotaData = QuotaData(limits: [
+            QuotaLimit(
+                type: "WEB_SEARCH_MONTHLY",
+                percentage: nil,
+                usage: 12,
+                number: 100,
+                remaining: 88,
+                nextResetTime: .iso8601("2026-02-01T00:00:00Z")
+            ),
+        ])
+
+        let snapshot = UsageSnapshot(from: quotaData)
+
+        XCTAssertNil(snapshot, "プライマリクォータがない場合はnilを返す")
+    }
+
+    func testUsageSnapshotNormalizationWithoutPercentageField() throws {
+        // percentageフィールドがない場合の計算テスト
+        let quotaData = QuotaData(limits: [
+            QuotaLimit(
+                type: "TOKENS_5H",
+                percentage: nil,  // percentageなし
+                usage: 4230,
+                number: 10000,
+                remaining: 5770,
+                nextResetTime: .seconds(1737118800)
+            ),
+        ])
+
+        let snapshot = UsageSnapshot(from: quotaData)
+
+        XCTAssertNotNil(snapshot)
+        // 計算: floor(100 * 4230 / 10000) = 42
+        XCTAssertEqual(snapshot?.primaryPct, 42)
+    }
+
+    func testUsageSnapshotNormalizationWithMultipleSecondaries() throws {
+        // 複数セカンダリ枠のテスト
+        let quotaData = QuotaData(limits: [
+            QuotaLimit(
+                type: "TOKENS_5H",
+                percentage: 42.3,
+                usage: 4230,
+                number: 10000,
+                remaining: 5770,
+                nextResetTime: .seconds(1737118800)
+            ),
+            QuotaLimit(
+                type: "WEB_SEARCH_MONTHLY",
+                percentage: nil,
+                usage: 12,
+                number: 100,
+                remaining: 88,
+                nextResetTime: .iso8601("2026-02-01T00:00:00Z")
+            ),
+            QuotaLimit(
+                type: "READER_MONTHLY",
+                percentage: 5.0,
+                usage: 5,
+                number: 100,
+                remaining: 95,
+                nextResetTime: .milliseconds(1769904000000)
+            ),
+            QuotaLimit(
+                type: "ZREAD_MONTHLY",
+                percentage: nil,
+                usage: 0,
+                number: 50,
+                remaining: 50,
+                nextResetTime: .seconds(1769904000)
+            ),
+        ])
+
+        let snapshot = UsageSnapshot(from: quotaData)
+
+        XCTAssertNotNil(snapshot)
+        XCTAssertEqual(snapshot?.secondary.count, 3)
+        XCTAssertEqual(snapshot?.secondary[0].label, "Search (Monthly)")
+        XCTAssertEqual(snapshot?.secondary[1].label, "Reader (Monthly)")
+        XCTAssertEqual(snapshot?.secondary[2].label, "ZRead (Monthly)")
+    }
+
+    func testUsageSnapshotNormalizationWithDebugJson() throws {
+        // デバッグJSONオプションのテスト
+        let quotaData = QuotaData(limits: [
+            QuotaLimit(
+                type: "TOKENS_5H",
+                percentage: 42.3,
+                usage: 4230,
+                number: 10000,
+                remaining: 5770,
+                nextResetTime: .seconds(1737118800)
+            ),
+        ])
+
+        // デバッグJSONあり
+        let snapshotWithDebug = UsageSnapshot(from: quotaData, includeDebugJson: true)
+        XCTAssertNotNil(snapshotWithDebug)
+        XCTAssertNotNil(snapshotWithDebug?.rawDebugJson)
+
+        // デバッグJSONなし（デフォルト）
+        let snapshotWithoutDebug = UsageSnapshot(from: quotaData, includeDebugJson: false)
+        XCTAssertNotNil(snapshotWithoutDebug)
+        XCTAssertNil(snapshotWithoutDebug?.rawDebugJson)
+    }
+
     // MARK: - Helper Types
 
     private var decoder: JSONDecoder {
