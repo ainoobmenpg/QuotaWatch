@@ -131,34 +131,63 @@ UI/通知が参照する唯一のモデル:
 
 ## Gitワークフロー
 
+> **🚨 重要: 作業は必ずfeatureブランチで行うこと**
+> - **mainブランチへの直接コミットは禁止**
+> - **必ずPRを作成してマージすること**
+
 ### 作業開始時
 
 ```bash
-# mainを最新にする
+# 1. mainを最新にする
 git checkout main
 git pull origin main
 
-# 作業ブランチを作成（feature-xxx または issue-N-xxx）
+# 2. 作業ブランチを作成（必ず実行すること）
+# - feature-xxx: 新機能開発
+# - issue-N-xxx: Issue対応
 git checkout -b feature-xxx  # または issue-N-xxx
 ```
 
 ### 作業完了時
 
 ```bash
-# 1. PRを作成してマージ
+# 1. 変更をコミット＆プッシュ
+git add .
+git commit -m "feat: コミットメッセージ"
+git push -u origin feature-xxx
+
+# 2. PRを作成
 gh pr create --title "タイトル" --body "説明"
+
+# 3. PRをマージ（レビュー後）
 gh pr merge <PR番号> --squash --delete-branch
 
-# 2. 関連IssueをClose（あれば）
-gh issue close <Issue番号> --comment "完了コメント"
+# 4. 関連IssueをClose（あれば）
+gh issue close <Issue番号> --comment "完了"
 
-# 3. mainブランチへ戻して最新にする
+# 5. mainブランチへ戻して最新にする
 git checkout main
 git pull origin main
 
-# 4. ブランチを削除（ローカル・リモート）
+# 6. ローカルブランチを削除
 git branch -d <ブランチ名>
-git push origin --delete <ブランチ名>
+```
+
+### 違反した場合の修正手順
+
+誤ってmainブランチで作業してしまった場合:
+
+```bash
+# 1. 作業内容をfeatureブランチに移動
+git checkout -b feature-xxx
+git push -u origin feature-xxx
+
+# 2. mainをリセット
+git checkout main
+git reset --hard origin/main
+
+# 3. 通常通りPRを作成
+gh pr create --title "..." --body "..."
 ```
 
 ## 実装タスク順序
