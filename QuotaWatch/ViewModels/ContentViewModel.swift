@@ -7,6 +7,8 @@
 
 import Foundation
 import OSLog
+import SwiftUI
+import UserNotifications
 
 // MARK: - EngineState
 
@@ -71,6 +73,9 @@ public final class ContentViewModel: ObservableObject {
     /// QuotaEngine（actor）
     private let engine: QuotaEngine
 
+    /// Provider（Z.ai等）
+    private let provider: Provider
+
     // MARK: - UI状態（@Published）
 
     /// 現在のスナップショット
@@ -88,6 +93,9 @@ public final class ContentViewModel: ObservableObject {
     /// エラーメッセージ
     @Published private(set) var errorMessage: String?
 
+    /// アプリ設定
+    @Published private(set) var appSettings: AppSettings
+
     // MARK: - ロガー
 
     private let logger = Logger(subsystem: "com.quotawatch.viewmodel", category: "ContentViewModel")
@@ -96,9 +104,13 @@ public final class ContentViewModel: ObservableObject {
 
     /// ContentViewModelを初期化
     ///
-    /// - Parameter engine: QuotaEngine
-    public init(engine: QuotaEngine) {
+    /// - Parameters:
+    ///   - engine: QuotaEngine
+    ///   - provider: Provider（Z.ai等）
+    public init(engine: QuotaEngine, provider: Provider) {
         self.engine = engine
+        self.provider = provider
+        self.appSettings = AppSettings()
     }
 
     /// 初期データを非同期で読み込み
@@ -171,6 +183,85 @@ public final class ContentViewModel: ObservableObject {
     /// 状態をリフレッシュ
     public func refresh() async {
         await updateState()
+    }
+
+    // MARK: - 通知
+
+    /// テスト通知を送信
+    public func sendTestNotification() async {
+        do {
+            try await NotificationManager.shared.send(
+                title: "QuotaWatch テスト通知",
+                body: "これはテスト通知です。通知設定が正常に動作しています。"
+            )
+            logger.log("テスト通知を送信しました")
+        } catch {
+            logger.error("テスト通知エラー: \(error.localizedDescription)")
+            errorMessage = "通知の送信に失敗しました: \(error.localizedDescription)"
+        }
+    }
+
+    // MARK: - ダッシュボード
+
+    /// ダッシュボードを開く
+    public func openDashboard() async {
+        guard let dashboardURL = provider.dashboardURL else {
+            logger.warning("ダッシュボードURLが設定されていません")
+            return
+        }
+
+        NSWorkspace.shared.open(dashboardURL)
+        logger.log("ダッシュボードを開きました: \(dashboardURL)")
+    }
+
+    // MARK: - 設定管理
+
+    /// 更新間隔を設定
+    ///
+    /// - Parameter interval: 更新間隔
+    public func setUpdateInterval(_ interval: UpdateInterval) async {
+        logger.log("更新間隔を変更: \(interval.displayName)")
+        await engine.setBaseInterval(TimeInterval(interval.rawValue))
+    }
+
+    /// 通知有効/無効を設定
+    ///
+    /// - Parameter enabled: 有効にする場合はtrue
+    public func setNotificationsEnabled(_ enabled: Bool) async {
+        logger.log("通知設定を変更: \(enabled ? "有効" : "無効")")
+
+        if enabled {
+            // 権限がまだない場合は要求
+            let status = await NotificationManager.shared.getAuthorizationStatus()
+            if status != .authorized {
+                do {
+                    _ = try await NotificationManager.shared.requestAuthorization()
+                } catch {
+                    logger.error("通知権限の取得に失敗: \(error.localizedDescription)")
+                    errorMessage = "通知権限の取得に失敗しました"
+                }
+            }
+        }
+    }
+
+    /// Login Item有効/無効を設定
+    ///
+    /// - Parameter enabled: 有効にする場合はtrue
+    public func setLoginItemEnabled(_ enabled: Bool) async {
+        logger.log("Login Item設定を変更: \(enabled ? "有効" : "無効")")
+        // TODO: SMAppServiceでログイン時起動を設定（macOS 13+）
+    }
+
+    // MARK: - ユーティリティ
+
+    /// Provider表示名
+    var providerDisplayName: String {
+        return provider.displayName
+    }
+
+    /// ダッシュボードURL
+    var dashboardURL: URL? {
+        return provider.dashboardURL
     }
 }
 

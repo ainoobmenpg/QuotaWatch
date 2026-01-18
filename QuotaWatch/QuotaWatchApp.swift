@@ -60,7 +60,7 @@ struct QuotaWatchApp: App {
             await newEngine.startRunLoop()
 
             // ContentViewModelを初期化
-            let newViewModel = ContentViewModel(engine: newEngine)
+            let newViewModel = ContentViewModel(engine: newEngine, provider: provider)
             await newViewModel.loadInitialData()
             self.viewModel = newViewModel
 
@@ -113,150 +113,84 @@ struct MenuBarView: View {
 
     @ViewBuilder
     private func contentView(viewModel: ContentViewModel) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // メニューバータイトル
-            Text(viewModel.menuBarTitle)
-                .font(.headline)
-
-            Divider()
-
-            // スナップショット情報
-            if let snapshot = viewModel.snapshot {
-                snapshotView(snapshot)
-            }
-
-            Divider()
-
-            // エンジン状態
-            if let engineState = viewModel.engineState {
-                engineStateView(engineState)
-            }
-
-            Divider()
-
-            // アクション
-            actionButtons(viewModel)
-
-            // エラーメッセージ
-            if let errorMessage = viewModel.errorMessage {
-                Text(errorMessage)
-                    .font(.caption)
-                    .foregroundColor(.red)
-            }
-        }
-        .padding()
-    }
-
-    @ViewBuilder
-    private func snapshotView(_ snapshot: UsageSnapshot) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // プライマリクォータ
-            HStack {
-                Text(snapshot.primaryTitle)
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-
-                if let pct = snapshot.primaryPct {
-                    Text("\(pct)%")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                // ヘッダー
+                if let engineState = viewModel.engineState {
+                    HeaderView(
+                        isBackingOff: engineState.isBackingOff,
+                        hasError: viewModel.errorMessage != nil,
+                        providerDisplayName: viewModel.providerDisplayName
+                    )
                 }
 
-                Spacer()
+                Divider()
 
-                // 残り時間
-                if let resetEpoch = snapshot.resetEpoch {
-                    Text(TimeFormatter.formatTimeRemaining(resetEpoch: resetEpoch))
+                // プライマリクォータ
+                if let snapshot = viewModel.snapshot {
+                    PrimaryQuotaView(snapshot: snapshot)
+                }
+
+                // セカンダリクォータ
+                if let snapshot = viewModel.snapshot {
+                    SecondaryQuotaView(limits: snapshot.secondary)
+                }
+
+                Divider()
+
+                // ステータス
+                if let engineState = viewModel.engineState {
+                    StatusView(
+                        lastFetchEpoch: engineState.lastFetchEpoch,
+                        nextFetchEpoch: engineState.nextFetchEpoch,
+                        backoffFactor: engineState.backoffFactor,
+                        errorMessage: viewModel.errorMessage
+                    )
+                }
+
+                Divider()
+
+                // アクション
+                ActionsView(
+                    onForceFetch: {
+                        await viewModel.forceFetch()
+                    },
+                    onTestNotification: {
+                        await viewModel.sendTestNotification()
+                    },
+                    onOpenDashboard: {
+                        await viewModel.openDashboard()
+                    },
+                    isFetching: viewModel.isFetching,
+                    dashboardURL: viewModel.dashboardURL
+                )
+
+                Divider()
+
+                // 設定
+                SettingsView(
+                    settings: viewModel.appSettings,
+                    onUpdateIntervalChanged: { interval in
+                        await viewModel.setUpdateInterval(interval)
+                    },
+                    onNotificationsChanged: { enabled in
+                        await viewModel.setNotificationsEnabled(enabled)
+                    },
+                    onLoginItemChanged: { enabled in
+                        await viewModel.setLoginItemEnabled(enabled)
+                    }
+                )
+
+                // エラーメッセージ
+                if let errorMessage = viewModel.errorMessage {
+                    Text(errorMessage)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.red)
+                        .padding(.top, 4)
                 }
             }
-
-            // プログレスバー
-            if let pct = snapshot.primaryPct {
-                ProgressView(value: Double(pct), total: 100)
-                    .progressViewStyle(.linear)
-            }
-
-            // セカンダリクォータ
-            if !snapshot.secondary.isEmpty {
-                ForEach(snapshot.secondary) { limit in
-                    secondaryLimitView(limit)
-                }
-            }
+            .padding()
         }
-    }
-
-    @ViewBuilder
-    private func secondaryLimitView(_ limit: UsageLimit) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(limit.label)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-
-                if let pct = limit.pct {
-                    Text("\(pct)%")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-
-                Spacer()
-            }
-
-            if let pct = limit.pct {
-                ProgressView(value: Double(pct), total: 100)
-                    .progressViewStyle(.linear)
-                    .scaleEffect(y: 0.5)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func engineStateView(_ engineState: EngineState) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("ステータス")
-                .font(.caption)
-                .fontWeight(.semibold)
-                .foregroundColor(.secondary)
-
-            HStack {
-                if engineState.isBackingOff {
-                    Label("バックオフ中", systemImage: "pause.circle")
-                        .font(.caption)
-                        .foregroundColor(.orange)
-                } else {
-                    Label("通常", systemImage: "checkmark.circle")
-                        .font(.caption)
-                        .foregroundColor(.green)
-                }
-
-                Spacer()
-
-                Text("次回: \(engineState.secondsUntilNextFetch)秒")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func actionButtons(_ viewModel: ContentViewModel) -> some View {
-        HStack(spacing: 12) {
-            Button(action: {
-                Task { await viewModel.forceFetch() }
-            }) {
-                Label("強制フェッチ", systemImage: "arrow.clockwise")
-            }
-            .buttonStyle(.bordered)
-            .disabled(viewModel.isFetching)
-
-            Button(action: {
-                Task { await viewModel.refresh() }
-            }) {
-                Label("更新", systemImage: "arrow.down.circle")
-            }
-            .buttonStyle(.bordered)
-        }
+        .frame(minWidth: 320, idealWidth: 360, maxWidth: 420)
     }
 }

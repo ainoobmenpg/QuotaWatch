@@ -9,6 +9,13 @@ import Foundation
 
 /// 時間フォーマットユーティリティ
 public enum TimeFormatter {
+    /// DateFormatterの静的キャッシュ（formatResetTime用）
+    private static let resetTimeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "M/d H:mm"
+        return formatter
+    }()
+
     /// 残り時間をフォーマット（"2h36m"形式）
     ///
     /// - Parameter resetEpoch: リセット時刻（epoch秒）
@@ -43,5 +50,23 @@ public enum TimeFormatter {
         } else {
             return "\(hours)h"
         }
+    }
+
+    /// リセット時刻をフォーマット（"1/15 15:30"形式）
+    ///
+    /// - Parameter resetEpoch: リセット時刻（epoch秒）
+    /// - Returns: フォーマットされた日時文字列
+    public static func formatResetTime(resetEpoch: Int) -> String {
+        let date = Date(timeIntervalSince1970: TimeInterval(resetEpoch))
+        return resetTimeFormatter.string(from: date)
+    }
+}
+
+// MARK: - Date拡張
+
+extension Date {
+    /// epoch秒を取得
+    var epochSeconds: Int {
+        return Int(timeIntervalSince1970)
     }
 }

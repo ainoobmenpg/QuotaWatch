@@ -304,15 +304,6 @@ public func calculatePercentage(percentage: Double?, usage: Double, total: Doubl
     return Int(floor(100 * usage / total))
 }
 
-// MARK: - Date拡張
-
-extension Date {
-    /// epoch秒を取得
-    var epochSeconds: Int {
-        return Int(timeIntervalSince1970)
-    }
-}
-
 // MARK: - 正規化サポート
 
 /// Z.aiのプライマリクォータタイプ
