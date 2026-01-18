@@ -5,6 +5,7 @@
 //  クォータリセット通知を管理
 //
 
+import AppKit
 import Foundation
 import OSLog
 
@@ -37,6 +38,10 @@ public actor ResetNotifier {
     private let persistence: PersistenceManager
     private var task: Task<Void, Never>?
 
+    /// スリープ復帰検知用オブザーバー
+    /// Note: nonisolated(unsafe) は @MainActor からアクセスするために必要
+    private nonisolated(unsafe) var wakeObserver: NSObjectProtocol?
+
     private let logger = Logger(subsystem: "com.quotawatch.notifier", category: "ResetNotifier")
 
     public init(
@@ -59,12 +64,23 @@ public actor ResetNotifier {
         task = Task {
             await runLoop()
         }
+
+        // スリープ復帰検知を設定
+        Task { @MainActor in
+            await self.setupWakeObserver()
+        }
     }
 
     /// 通知チェックを停止
     public func stop() {
         task?.cancel()
         task = nil
+
+        // @MainActor で実行
+        Task { @MainActor in
+            await self.teardownWakeObserver()
+        }
+
         logger.log("ResetNotifierを停止")
     }
 
@@ -122,6 +138,47 @@ public actor ResetNotifier {
                 logger.error("状態保存エラー: \(error.localizedDescription)")
                 throw ResetNotifierError.stateSaveFailed(error.localizedDescription)
             }
+        }
+    }
+
+    // MARK: - 内部メソッド - スリープ復帰検知
+
+    /// スリープ復帰検知用の通知監視を設定
+    @MainActor
+    private func setupWakeObserver() {
+        let center = NSWorkspace.shared.notificationCenter
+
+        wakeObserver = center.addObserver(
+            forName: NSWorkspace.screensDidWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { [weak self] in
+                await self?.handleWakeNotification()
+            }
+        }
+
+        logger.log("スリープ復帰検知を開始しました")
+    }
+
+    /// スリープ復帰検知用の通知監視を解除
+    @MainActor
+    private func teardownWakeObserver() {
+        if let observer = wakeObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(observer)
+            wakeObserver = nil
+            logger.log("スリープ復帰検知を解除しました")
+        }
+    }
+
+    /// スリープ復帰ハンドラ
+    private func handleWakeNotification() async {
+        logger.log("スリープから復帰しました - 即時チェックを実行")
+
+        do {
+            try await checkReset()
+        } catch {
+            logger.error("スリープ復帰時のチェックエラー: \(error.localizedDescription)")
         }
     }
 }

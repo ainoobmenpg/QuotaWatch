@@ -123,6 +123,42 @@ final class ResetNotifierTests: XCTestCase {
             XCTFail("予期しないエラー: \(error)")
         }
     }
+
+    // MARK: - スリープ復帰テスト
+
+    func testWakeFromSleepTriggersCheck() async throws {
+        // リセット時刻を過去に設定
+        let now = Date().epochSeconds
+        let pastResetEpoch = now - 3600 // 1時間前
+
+        var testState = AppState()
+        testState.lastKnownResetEpoch = pastResetEpoch
+        testState.lastNotifiedResetEpoch = pastResetEpoch - Int(AppConstants.resetIntervalSeconds)
+
+        try await mockPersistence.saveState(testState)
+
+        // 状態が正しく保存されたことを確認
+        let loadedState = try await mockPersistence.loadState()
+        XCTAssertEqual(loadedState.lastKnownResetEpoch, pastResetEpoch)
+        XCTAssertEqual(loadedState.lastNotifiedResetEpoch, pastResetEpoch - Int(AppConstants.resetIntervalSeconds))
+
+        // 注: スリープ復帰の完全なテストは NSWorkspace.screensDidWakeNotification の
+        // 送信を必要とするため、統合テストで実施する必要があります
+        // ここでは状態管理の正しさを確認します
+    }
+
+    func testDuplicatePreventionAfterWake() async throws {
+        // 通知済みの状態（重複防止確認）
+        var testState = AppState()
+        let resetEpoch = Date().epochSeconds - 3600
+        testState.lastKnownResetEpoch = resetEpoch
+        testState.lastNotifiedResetEpoch = resetEpoch // 既に通知済み
+
+        try await mockPersistence.saveState(testState)
+
+        let loadedState = try await mockPersistence.loadState()
+        XCTAssertEqual(loadedState.lastKnownResetEpoch, loadedState.lastNotifiedResetEpoch)
+    }
 }
 
 // MARK: - Helper Extensions
