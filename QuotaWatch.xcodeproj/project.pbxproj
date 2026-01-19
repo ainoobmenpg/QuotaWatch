@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		037C2EC36038748A007836E6 /* QuotaEngineRunLoopTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A477064C7DA7510D89D89717 /* QuotaEngineRunLoopTests.swift */; };
 		093E54E3C0A343E7B35AC0DE /* SecondaryQuotaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8D463EFDC164E6E8A3E8D48 /* SecondaryQuotaView.swift */; };
+		E820B42A116A435481D3F308F1913065 /* APIKeySettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B1681A9E15047A7A927D11A1637FACB /* APIKeySettingsSheet.swift */; };
 		10059F50738148B98E3A8B91 /* HeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13020F9E19D446CD962EE97A /* HeaderView.swift */; };
 		174575AEECD4D9FFDBDA18EF /* AppConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3975009681D07503388A7700 /* AppConstants.swift */; };
 		17728FD1C102DD0FA087EB19 /* TimeFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 562BAE5AE690A4D7CE483938 /* TimeFormatter.swift */; };
@@ -63,6 +64,7 @@
 /* Begin PBXFileReference section */
 		03084E81161F967B5B48ED5E /* ZaiProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZaiProviderTests.swift; sourceTree = "<group>"; };
 		0D4508D7D30A4879896F5DEF /* ActionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionsView.swift; sourceTree = "<group>"; };
+		0B1681A9E15047A7A927D11A1637FACB /* APIKeySettingsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIKeySettingsSheet.swift; sourceTree = "<group>"; };
 		0FA39B39C6BE30DFB3643E8F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		13020F9E19D446CD962EE97A /* HeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeaderView.swift; sourceTree = "<group>"; };
 		1A2B3C4D5E6F7890ABCDEF01 /* ColorExtensionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorExtensionsTests.swift; sourceTree = "<group>"; };
@@ -248,6 +250,7 @@
 		C1A5615AED574DB58A3C3C14 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				0B1681A9E15047A7A927D11A1637FACB /* APIKeySettingsSheet.swift */,
 				13020F9E19D446CD962EE97A /* HeaderView.swift */,
 				361194A1220C4490AFEF48D8 /* StatusView.swift */,
 				83E965985994437FAE92563C /* PrimaryQuotaView.swift */,
@@ -397,6 +400,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E820B42A116A435481D3F308F1913065 /* APIKeySettingsSheet.swift in Sources */,
 				174575AEECD4D9FFDBDA18EF /* AppConstants.swift in Sources */,
 				B2A7E8F4C3D145A9E8F6D7A1 /* ColorExtensions.swift in Sources */,
 				F349A5EC8CAE5FD78063E38B /* AppState.swift in Sources */,

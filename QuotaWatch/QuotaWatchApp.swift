@@ -8,6 +8,8 @@ struct QuotaWatchApp: App {
     @State private var isInitializing = false
     private static let defaultMenuBarTitle = "QuotaWatch..."
     @State private var menuBarTitle: String = defaultMenuBarTitle
+    @State private var showingAPIKeySheet = false
+    @State private var apiKeySaveError: String?
 
     var body: some Scene {
         MenuBarExtra(menuBarTitle, systemImage: "chart.bar") {
@@ -15,7 +17,10 @@ struct QuotaWatchApp: App {
                 viewModel: viewModel,
                 initializationError: initializationError,
                 isInitializing: isInitializing,
-                retryInitialization: setupEngine
+                retryInitialization: setupEngine,
+                showingAPIKeySheet: $showingAPIKeySheet,
+                apiKeySaveError: apiKeySaveError,
+                saveAPIKey: saveAPIKey
             )
             .onAppear {
                 if viewModel == nil && !isInitializing {
@@ -72,6 +77,38 @@ struct QuotaWatchApp: App {
 
         isInitializing = false
     }
+
+    // MARK: - APIキー管理
+
+    /// APIキーを保存して再初期化
+    private func saveAPIKey(_ apiKey: String) async {
+        // 競合防止: 既に初期化中の場合は早期リターン
+        guard !isInitializing else {
+            let logger = Logger(subsystem: "com.quotawatch.app", category: "QuotaWatchApp")
+            logger.warning("初期化中のためAPIキー保存をスキップ")
+            return
+        }
+
+        let logger = Logger(subsystem: "com.quotawatch.app", category: "QuotaWatchApp")
+        do {
+            let keychain = KeychainStore()
+            try await keychain.write(apiKey: apiKey)
+            logger.log("APIキー保存成功")
+
+            // エラー状態をクリア
+            apiKeySaveError = nil
+
+            // 既存のviewModelをクリアして再初期化
+            viewModel = nil
+            initializationError = nil
+            await setupEngine()
+        } catch {
+            logger.error("APIキー保存エラー: \(error.localizedDescription)")
+            // エラー状態を設定してシートを再表示
+            apiKeySaveError = error.localizedDescription
+            showingAPIKeySheet = true
+        }
+    }
 }
 
 struct MenuBarView: View {
@@ -79,6 +116,9 @@ struct MenuBarView: View {
     let initializationError: Error?
     let isInitializing: Bool
     let retryInitialization: () async -> Void
+    @Binding var showingAPIKeySheet: Bool
+    let apiKeySaveError: String?
+    let saveAPIKey: (String) async -> Void
 
     var body: some View {
         VStack {
@@ -90,21 +130,53 @@ struct MenuBarView: View {
                 contentView(viewModel: viewModel)
             }
         }
+        .sheet(isPresented: $showingAPIKeySheet) {
+            APIKeySettingsSheet(
+                onSave: saveAPIKey,
+                initialError: apiKeySaveError
+            )
+        }
     }
 
     @ViewBuilder
     private func errorView(_ error: Error) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label("初期化エラー", systemImage: "exclamationmark.triangle")
-                .font(.headline)
-                .foregroundColor(.red)
+        // APIキー未設定時は専用UIを表示
+        if let engineError = error as? QuotaEngineError,
+           case .apiKeyNotSet = engineError {
+            apiKeyNotSetView()
+        } else {
+            // 既存のエラー表示
+            VStack(alignment: .leading, spacing: 12) {
+                Label("初期化エラー", systemImage: "exclamationmark.triangle")
+                    .font(.headline)
+                    .foregroundColor(.red)
 
-            Text(error.localizedDescription)
+                Text(error.localizedDescription)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
+                Button("再試行") {
+                    Task { await retryInitialization() }
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            .padding()
+        }
+    }
+
+    @ViewBuilder
+    private func apiKeyNotSetView() -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("APIキー未設定", systemImage: "key.badge")
+                .font(.headline)
+                .foregroundColor(.orange)
+
+            Text("Z.aiのAPIキーを設定してください")
                 .font(.caption)
                 .foregroundColor(.secondary)
 
-            Button("再試行") {
-                Task { await retryInitialization() }
+            Button("APIキーを設定") {
+                showingAPIKeySheet = true
             }
             .buttonStyle(.borderedProminent)
         }
