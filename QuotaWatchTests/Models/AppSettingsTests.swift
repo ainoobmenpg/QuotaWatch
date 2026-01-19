@@ -8,6 +8,7 @@
 import XCTest
 @testable import QuotaWatch
 
+@MainActor
 final class AppSettingsTests: XCTestCase {
     private var testDefaults: UserDefaults!
 

@@ -248,8 +248,9 @@ public final class ContentViewModel: ObservableObject {
     ///
     /// - Parameter enabled: 有効にする場合はtrue
     public func setLoginItemEnabled(_ enabled: Bool) async {
+        // AppSettingsを直接更新（didSetでupdateLoginItemStatusが呼ばれる）
+        appSettings.loginItemEnabled = enabled
         logger.log("Login Item設定を変更: \(enabled ? "有効" : "無効")")
-        // TODO: SMAppServiceでログイン時起動を設定（macOS 13+）
     }
 
     // MARK: - ユーティリティ

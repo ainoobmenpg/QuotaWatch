@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 import OSLog
+import ServiceManagement
 
 /// 更新間隔（秒）
 public enum UpdateInterval: Int, CaseIterable, Identifiable, Codable {
@@ -31,6 +32,7 @@ public enum UpdateInterval: Int, CaseIterable, Identifiable, Codable {
 
 /// アプリ設定を管理するモデル
 @Observable
+@MainActor
 public final class AppSettings {
     // MARK: - UserDefaults Keys
 
@@ -94,30 +96,58 @@ public final class AppSettings {
             self.notificationsEnabled = true
         }
 
-        self.loginItemEnabled = defaults.bool(forKey: Keys.loginItemEnabled)
+        // SMAppServiceの実際の状態とUserDefaultsを同期
+        // （システム設定から手動で削除された場合等の不一致を修正）
+        if #available(macOS 13.0, *) {
+            let actualStatus = SMAppService.mainApp.status == .enabled
+            let savedStatus = defaults.bool(forKey: Keys.loginItemEnabled)
+
+            if actualStatus != savedStatus {
+                // 実際の状態をUserDefaultsに反映（init内なのでdidSetは呼ばれない）
+                defaults.set(actualStatus, forKey: Keys.loginItemEnabled)
+            }
+            self.loginItemEnabled = actualStatus
+        } else {
+            self.loginItemEnabled = defaults.bool(forKey: Keys.loginItemEnabled)
+        }
     }
 
     // MARK: - Login Item管理
 
     /// Login Itemの状態を更新
     private func updateLoginItemStatus() {
-        // TODO: SMAppServiceでログイン時起動を設定
-        // macOS 13+で利用可能
-        // #available(macOS 13.0, *) {
-        //     let appService = SMAppService.mainApp
-        //     do {
-        //         if loginItemEnabled {
-        //             if appService.status != .enabled {
-        //                 try appService.register()
-        //             }
-        //         } else {
-        //             if appService.status == .enabled {
-        //                 try appService.unregister()
-        //             }
-        //         }
-        //     } catch {
-        //         logger.error("Login Item設定エラー: \(error.localizedDescription)")
-        //     }
-        // }
+        // データ競合を避けるため、値をローカル変数にキャプチャ
+        let isEnabled = loginItemEnabled
+
+        if #available(macOS 13.0, *) {
+            let appService = SMAppService.mainApp
+
+            // 非同期で状態を更新（didSetは同期的なのでTaskでラップ）
+            Task { @MainActor in
+                do {
+                    if isEnabled {
+                        // 登録試行
+                        if appService.status == .enabled {
+                            logger.log("Login Itemは既に有効です")
+                            return
+                        }
+                        try appService.register()
+                        logger.log("Login Itemを登録しました")
+                    } else {
+                        // 解除試行
+                        if appService.status != .enabled {
+                            logger.log("Login Itemは既に無効です")
+                            return
+                        }
+                        try appService.unregister()
+                        logger.log("Login Itemを解除しました")
+                    }
+                } catch {
+                    logger.error("Login Item設定エラー: \(error.localizedDescription)")
+                }
+            }
+        } else {
+            logger.error("Login Item機能はmacOS 13.0以上が必要です")
+        }
     }
 }
