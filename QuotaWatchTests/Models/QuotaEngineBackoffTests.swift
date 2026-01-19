@@ -235,16 +235,84 @@ final class QuotaEngineBackoffTests: XCTestCase {
         XCTAssertEqual(interval, 60, accuracy: 5)
     }
 
-    // MARK: - Issue #38: 後回しにしたテスト
+    // MARK: - テストデータ定数
 
-    /// 以下のテストはIssue #38で本格実装予定
-    /// https://github.com/mo9mo9-uwu-mo9mo9/QuotaWatch/issues/38
+    /// バックオフ進行の期待値: [(係数, 最小間隔, 最大間隔)]
     ///
-    /// TODO: 指数関数的バックオフ（testRateLimit_ExponentialBackoff）
-    /// - 2回目、3回目のバックオフで係数が4, 8になることを確認
-    /// - 時間管理の抽象化またはモック導入が必要
+    /// 基本間隔60秒、最大バックオフ900秒、ジッター0-15秒に基づく
+    private enum BackoffProgression {
+        static let standard: [(factor: Int, minInterval: Int, maxInterval: Int)] = [
+            (2, 120, 135),   // factor=2, 60*2=120 + jitter(0-15)
+            (4, 240, 255),   // factor=4, 60*4=240 + jitter(0-15)
+            (8, 480, 495),   // factor=8, 60*8=480 + jitter(0-15)
+            (15, 900, 915),  // factor=15(上限), 900 + jitter(0-15)
+            (15, 900, 915),  // factor=15(上限), 900 + jitter(0-15) [最大値固定確認用]
+        ]
+    }
+
+    // MARK: - Issue #27: Phase 10 単体テスト実装
+
+    /// バックオフ計算ロジックの包括的テスト
     ///
-    /// TODO: 最大バックオフクリップ（testRateLimit_MaxBackoffCap）
-    /// - 5回連続のレート制限で、バックオフ係数が15に達した後、間隔が915秒以下にクリップされることを確認
-    /// - テスト時間を短縮する工夫が必要
+    /// 確認項目:
+    /// - 指数関数的バックオフ: 連続するレート制限で係数が 2, 4, 8, 15 と増加
+    /// - 最大バックオフクリップ: 係数が15に達した後、間隔が915秒以下にクリップ
+    /// - ジッター適用: 各間隔に0-15秒のジッターが付与される
+    func testRateLimit_BackoffProgression() async throws {
+        let (engine, provider, _) = try await makeTestEngine(
+            testName: "testBackoffProgression",
+            initializeCache: false
+        )
+
+        // 基本間隔を60秒に設定して初期キャッシュを取得
+        await engine.setBaseInterval(60)
+        provider.shouldThrowRateLimit = false
+        _ = try await engine.forceFetch()
+
+        provider.shouldThrowRateLimit = true
+
+        // 5回連続でレート制限を発生させ、バックオフの進行を確認
+        for (index, expected) in BackoffProgression.standard.enumerated() {
+            let iteration = index + 1
+
+            // 基準時刻を取得（タイミング依存を軽減）
+            let baseEpoch = Int(Date().timeIntervalSince1970)
+            await engine.overrideNextFetchEpoch(baseEpoch)
+
+            // フェッチを実行（レート制限エラー）
+            _ = try await engine.fetchIfDue()
+
+            // バックオフ係数を確認
+            let state = await engine.getState()
+            XCTAssertEqual(
+                state.backoffFactor,
+                expected.factor,
+                "反復\(iteration)回目: バックオフ係数が\(expected.factor)であるべき"
+            )
+
+            // 次回フェッチ間隔を確認（基準時刻を使用）
+            let nextFetchEpoch = await engine.getNextFetchEpoch()
+            let interval = nextFetchEpoch - baseEpoch
+
+            // 間隔が期待範囲内であることを確認
+            XCTAssertGreaterThanOrEqual(
+                interval,
+                expected.minInterval,
+                "反復\(iteration)回目: 間隔が\(expected.minInterval)秒以上であるべき（実際: \(interval)秒）"
+            )
+            XCTAssertLessThanOrEqual(
+                interval,
+                expected.maxInterval,
+                "反復\(iteration)回目: 間隔が\(expected.maxInterval)秒以下であるべき（実際: \(interval)秒）"
+            )
+        }
+
+        // 最終状態: 係数が最大値15で固定されていることを再確認
+        let finalState = await engine.getState()
+        XCTAssertEqual(
+            finalState.backoffFactor,
+            15,
+            "最終状態: バックオフ係数が最大値15で固定されているべき"
+        )
+    }
 }
