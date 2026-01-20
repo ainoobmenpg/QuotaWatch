@@ -6,11 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **QuotaWatch** は、macOSのメニューバー常駐アプリで、AIサービス（Z.ai/GLM）のクォータ使用状況を監視・表示するアプリケーションです。SwiftBarプラグインをネイティブSwiftUIアプリ（MenuBarExtra）に置換することが目的です。
 
-**現在の状態**: 実装中。設計書は `quota-watch-menubar-docs/` にあります。
+**現在の状態**: **MVP完了**（2026-01-19、Issue #29 Phase 10完了）。設計書は `quota-watch-menubar-docs/` にアーカイブされています。
 
 ## 対象環境
 
-- **macOS 26.2 (25C56) 以降**（Deployment Targetに26.2が無い場合は指定可能な範囲で最新を選択）
+- **macOS 26.2 (Tahoe, 25C56) 以降**（Deployment Targetに26.2が無い場合は指定可能な範囲で最新を選択）
 - SwiftUI + MenuBarExtra
 - 外部ライブラリ依存なし（ネイティブ実装のみ）
 
@@ -89,7 +89,7 @@ UI/通知が参照する唯一のモデル:
 - **Endpoint**: `https://api.z.ai/api/monitor/usage/quota/limit`
 - **Method**: GET
 - **Headers**: `Authorization: <API_KEY>`（ベアトークン形式）
-- **Response**: `spec/api_sample.json` 参照
+- **Response**: `quota-watch-menubar-docs/spec/api_sample.json` 参照
 
 ### レート制限判定（バックオフ対象）
 - HTTP 429
@@ -102,7 +102,7 @@ UI/通知が参照する唯一のモデル:
 - `usage_cache.json` - 最新成功レスポンス（`UsageSnapshot`）
 - `state.json` - 実行状態（次回フェッチ時刻、バックオフ係数、通知重複防止用epoch）
 
-**状態スキーマ**: `spec/state_schema.json` 参照
+**状態スキーマ**: `quota-watch-menubar-docs/spec/state_schema.json` 参照
 
 ## ログ機能
 

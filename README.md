@@ -6,6 +6,24 @@ macOSのメニューバーに常駐し、AIサービス（Z.ai/GLM）のクォ�
 
 QuotaWatchは、SwiftBarプラグインとして実装されていたクォータ監視機能を、ネイティブのmacOSアプリ（SwiftUI + MenuBarExtra）として完全に置き換えることを目的としています。
 
+## MVPステータス
+
+**完了: 2026-01-19**（Issue #29 Phase 10）
+
+### 実装済み機能
+
+- ✅ メニューバー常駐アプリ（MenuBarExtra）
+- ✅ Z.ai APIからクォータ使用状況を取得
+- ✅ グラフィカル表示（プログレスバー/ゲージ）
+- ✅ 指数バックオフによるレート制限対応
+- ✅ キャッシュ維持（API失敗時も表示を維持）
+- ✅ リセット通知（重複防止あり）
+- ✅ KeychainによるAPIキー管理
+- ✅ ログイン時起動設定
+- ✅ 更新間隔設定（最短1分）
+- ✅ 通知ON/OFF設定
+- ✅ ログ機能（LoggerManager + DebugLogger）
+
 ### 特徴
 
 - **メニューバー常駐**: 常にクォータ使用状況を確認可能
@@ -18,7 +36,8 @@ QuotaWatchは、SwiftBarプラグインとして実装されていたクォー�
 
 ## 対象環境
 
-- **macOS 26.2 (25C56) 以降**
+- **macOS 26.2 (Tahoe, 25C56) 以降**
+  - macOS Tahoeは2025年12月にリリースされたバージョン
 - Apple Silicon (arm64) / Intel (x86_64)
 
 ## インストール
@@ -55,7 +74,7 @@ xcodebuild test -scheme QuotaWatch -destination 'platform=macOS'
 
 ## 設計ドキュメント
 
-詳細な設計情報は `quota-watch-menubar-docs/` を参照してください。
+詳細な設計情報は `quota-watch-menubar-docs/` を参照してください（**設計書のアーカイブ**）。
 
 - [全体概要](quota-watch-menubar-docs/docs/00_overview.md)
 - [アーキテクチャ](quota-watch-menubar-docs/docs/02_architecture.md)
