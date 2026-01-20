@@ -51,6 +51,33 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         // ログ出力（早期リターンより前）
         await loggerManager.log("setupEngine() 開始", category: "APP")
 
+        // 通知権限のチェックとリクエスト
+        let notificationStatus = await NotificationManager.shared.getAuthorizationStatus()
+        switch notificationStatus {
+        case .notDetermined:
+            await loggerManager.log("通知権限が未設定です。リクエストを表示します。", category: "APP")
+            do {
+                let granted = try await NotificationManager.shared.requestAuthorization()
+                if granted {
+                    await loggerManager.log("通知権限が付与されました", category: "APP")
+                } else {
+                    await loggerManager.log("通知権限が拒否されました", category: "APP")
+                }
+            } catch {
+                await loggerManager.log("通知権限のリクエストに失敗: \(error.localizedDescription)", category: "APP")
+            }
+        case .authorized:
+            await loggerManager.log("通知権限が付与されています", category: "APP")
+        case .denied:
+            await loggerManager.log("通知権限が拒否されています", category: "APP")
+        case .provisional:
+            await loggerManager.log("通知権限は暫定付与されています", category: "APP")
+        case .ephemeral:
+            await loggerManager.log("通知権限は一時的に付与されています", category: "APP")
+        @unknown default:
+            await loggerManager.log("未知の通知権限ステータス: \(notificationStatus.rawValue)", category: "APP")
+        }
+
         guard viewModel == nil else {
             await loggerManager.log("setupEngine() スキップ: viewModel が既存", category: "APP")
             return
