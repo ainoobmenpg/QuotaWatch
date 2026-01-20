@@ -71,7 +71,7 @@ public actor ResetNotifier {
 
         // スリープ復帰検知を設定
         Task { @MainActor in
-            await self.setupWakeObserver()
+            self.setupWakeObserver()
         }
     }
 
@@ -82,7 +82,7 @@ public actor ResetNotifier {
 
         // @MainActor で実行
         Task { @MainActor in
-            await self.teardownWakeObserver()
+            self.teardownWakeObserver()
         }
 
         logger.log("ResetNotifierを停止")

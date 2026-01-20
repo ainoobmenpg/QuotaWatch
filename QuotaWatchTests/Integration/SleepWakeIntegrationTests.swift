@@ -82,7 +82,7 @@ final class SleepWakeIntegrationTests: XCTestCase {
 
         try await keychain.write(apiKey: "test_api_key")
 
-        let engine = await QuotaEngine(
+        let engine = try await QuotaEngine(
             provider: provider,
             persistence: persistence,
             keychain: keychain

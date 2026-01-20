@@ -144,7 +144,7 @@ public struct OnboardingView: View {
 
             // 初回フェッチを実行（成功確認）
             let provider = ZaiProvider()
-            let persistence = try PersistenceManager(customDirectoryURL: FileManager.default
+            let persistence = PersistenceManager(customDirectoryURL: FileManager.default
                 .urls(for: .applicationSupportDirectory, in: .userDomainMask)
                 .first!
                 .appending(path: "com.quotawatch"))

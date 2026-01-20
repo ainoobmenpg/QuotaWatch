@@ -55,7 +55,7 @@ struct ActionsView: View {
                 .fontWeight(.semibold)
                 .foregroundStyle(.secondary)
 
-            HStack(spacing: 8) {
+            VStack(spacing: 8) {
                 // Force fetch
                 AsyncButton(
                     title: "強制フェッチ",
@@ -72,7 +72,7 @@ struct ActionsView: View {
                 )
 
                 // Open dashboard
-                if let dashboardURL = dashboardURL {
+                if dashboardURL != nil {
                     AsyncButton(
                         title: "ダッシュボード",
                         systemImage: "safari",

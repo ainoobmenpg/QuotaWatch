@@ -22,6 +22,9 @@ public actor LoggerManager {
     /// ログファイルのパス
     private let logFileURL: URL
 
+    /// ログフォーマット用の日付フォーマッター（OSLog用）
+    private let dateFormatter: ISO8601DateFormatter
+
     /// ログサイズ上限（100KB）
     private let maxLogSize: Int = 100 * 1024
 
@@ -36,6 +39,13 @@ public actor LoggerManager {
         ).first!
         let bundleID = Bundle.main.bundleIdentifier ?? "com.quotawatch.QuotaWatch"
         self.logFileURL = appSupport.appending(path: "\(bundleID)/debug.log")
+
+        // 日付フォーマッターを初期化（OSLog用）
+        self.dateFormatter = ISO8601DateFormatter()
+        self.dateFormatter.formatOptions = [
+            .withYear, .withMonth, .withDay,
+            .withTime, .withFractionalSeconds
+        ]
 
         // ディレクトリを作成
         let directoryURL = logFileURL.deletingLastPathComponent()
@@ -70,8 +80,10 @@ public actor LoggerManager {
     ///   - message: ログメッセージ
     ///   - category: カテゴリ（デフォルト: "GENERAL"）
     public func log(_ message: String, category: String = "GENERAL") async {
-        // OSLog にも出力（確認用）
-        logger.log("[\(category)] \(message)")
+        let timestamp = dateFormatter.string(from: Date())
+
+        // OSLog にも出力（タイムスタンプ付き）
+        logger.log("[\(timestamp)] [\(category)] \(message)")
 
         // ファイルにも出力
         await getDebugLogger()?.log(message, category: category)

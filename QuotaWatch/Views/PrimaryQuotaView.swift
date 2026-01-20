@@ -29,12 +29,6 @@ struct PrimaryQuotaView: View {
                     .font(.subheadline)
                     .fontWeight(.semibold)
 
-                if let pct = snapshot.primaryPct {
-                    Text("\(pct)%")
-                        .font(.subheadline)
-                        .foregroundStyle(Color.usageColor(for: pct))
-                }
-
                 Spacer()
 
                 // 残り時間
@@ -54,13 +48,15 @@ struct PrimaryQuotaView: View {
 
                 // 詳細情報
                 VStack(alignment: .leading, spacing: 4) {
-                    if let used = snapshot.primaryUsed,
+                    // 残量（最優先情報）
+                    if let remaining = snapshot.primaryRemaining,
                        let total = snapshot.primaryTotal {
-                        usageRow(label: "使用量", value: formatNumber(used), total: formatNumber(total))
+                        usageRow(label: "残り", value: formatNumber(remaining), total: formatNumber(total))
                     }
 
-                    if let remaining = snapshot.primaryRemaining {
-                        usageRow(label: "残り", value: formatNumber(remaining))
+                    // 使用量
+                    if let used = snapshot.primaryUsed {
+                        usageRow(label: "使用済み", value: formatNumber(used))
                     }
 
                     if let resetEpoch = snapshot.resetEpoch {
@@ -78,12 +74,6 @@ struct PrimaryQuotaView: View {
                 Spacer()
             }
 
-            // 線形プログレスバー
-            if let pct = snapshot.primaryPct {
-                ProgressView(value: Double(pct), total: 100)
-                    .progressViewStyle(.linear)
-                    .tint(Color.usageColor(for: pct))
-            }
         }
     }
 

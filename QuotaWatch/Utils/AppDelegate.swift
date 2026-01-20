@@ -18,9 +18,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     /// 初期化エラー
     @Published var initializationError: Error?
 
-    /// 初期化中フラグ
-    @Published var isInitializing = false
-
     /// APIキー設定シート表示フラグ
     @Published var showingAPIKeySheet = false
 
@@ -83,12 +80,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
             return
         }
 
-        isInitializing = true
         initializationError = nil
 
         do {
             let provider = ZaiProvider()
-            let persistence = try PersistenceManager(customDirectoryURL: FileManager.default
+            let persistence = PersistenceManager(customDirectoryURL: FileManager.default
                 .urls(for: .applicationSupportDirectory, in: .userDomainMask)
                 .first!
                 .appending(path: "com.quotawatch"))
@@ -100,14 +96,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
                 keychain: keychain
             )
 
-            await newEngine.startRunLoop()
-
-            // ContentViewModelを初期化
+            // ContentViewModelを初期化（軽量な初期化のみ）
             let newViewModel = ContentViewModel(engine: newEngine, provider: provider)
-            await newViewModel.loadInitialData()
-            self.viewModel = newViewModel
 
-            // MenuBarControllerを初期化
+            // 先にUIを表示
+            self.viewModel = newViewModel
             self.menuBarController = MenuBarController(
                 viewModel: newViewModel,
                 appDelegate: self
@@ -115,7 +108,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
 
             // 成功時はエラーをクリア
             self.initializationError = nil
-            await loggerManager.log("setupEngine() 成功", category: "APP")
+            await loggerManager.log("setupEngine() UI初期化完了", category: "APP")
+
+            // バックグラウンドで残りの処理を実行
+            Task {
+                await newEngine.startRunLoop()
+                await newViewModel.loadInitialData()
+                await loggerManager.log("setupEngine() データロード完了", category: "APP")
+            }
 
         } catch {
             await loggerManager.log("QuotaWatch初期化エラー: \(error.localizedDescription)", category: "APP")
@@ -128,8 +128,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
                 showAPIKeyAlert()
             }
         }
-
-        isInitializing = false
     }
 
     // MARK: - NSAlert
@@ -150,12 +148,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     /// APIキーを保存して再初期化
     @MainActor
     func saveAPIKey(_ apiKey: String) async {
-        // 競合防止: 既に初期化中の場合は早期リターン
-        guard !isInitializing else {
-            await loggerManager.log("初期化中のためAPIキー保存をスキップ", category: "APP")
-            return
-        }
-
         do {
             let keychain = KeychainStore()
             try await keychain.write(apiKey: apiKey)

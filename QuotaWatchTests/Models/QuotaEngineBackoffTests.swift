@@ -39,7 +39,7 @@ final class QuotaEngineBackoffTests: XCTestCase {
         try await keychain.write(apiKey: "test_api_key")
 
         // Engineを初期化
-        let engine = await QuotaEngine(
+        let engine = try await QuotaEngine(
             provider: provider,
             persistence: persistence,
             keychain: keychain

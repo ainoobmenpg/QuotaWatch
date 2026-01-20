@@ -16,8 +16,6 @@ struct MenuBarPopupView: View {
         VStack {
             if let error = appDelegate.initializationError {
                 errorView(error)
-            } else if appDelegate.isInitializing {
-                ProgressView("初期化中...")
             } else {
                 contentView(viewModel: viewModel)
             }
@@ -80,7 +78,11 @@ struct MenuBarPopupView: View {
     private func contentView(viewModel: ContentViewModel) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                // ヘッダー
+                if viewModel.isLoadingInitialData {
+                    // スケルトンローダー（初期ロード中）
+                    loadingSkeletonView()
+                } else {
+                    // ヘッダー
                 if let engineState = viewModel.engineState {
                     HeaderView(
                         isBackingOff: engineState.isBackingOff,
@@ -158,9 +160,118 @@ struct MenuBarPopupView: View {
                         .foregroundColor(.red)
                         .padding(.top, 4)
                 }
+                }
             }
             .padding()
         }
         .frame(minWidth: 320, idealWidth: 360, maxWidth: 420)
+    }
+
+    // MARK: - スケルトンローダー
+
+    /// 初期ロード中のスケルトン表示
+    @ViewBuilder
+    private func loadingSkeletonView() -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // ヘッダースケルトン
+            skeletonRow(height: 24, width: 150)
+
+            Divider()
+
+            // プライマリクォータスケルトン
+            VStack(alignment: .leading, spacing: 8) {
+                skeletonRow(height: 20, width: 120)
+                skeletonRow(height: 36, width: 200)
+                ProgressView()
+                    .progressViewStyle(.linear)
+                    .tint(.secondary)
+            }
+
+            Divider()
+
+            // セカンダリクォータスケルトン
+            VStack(alignment: .leading, spacing: 8) {
+                skeletonRow(height: 16, width: 180)
+                skeletonRow(height: 16, width: 140)
+            }
+
+            Divider()
+
+            // ステータススケルトン
+            VStack(alignment: .leading, spacing: 8) {
+                skeletonRow(height: 14, width: 100)
+                skeletonRow(height: 14, width: 160)
+            }
+
+            Divider()
+
+            // アクションセクション（簡略版）
+            HStack(spacing: 12) {
+                skeletonCircle(size: 32)
+                skeletonCircle(size: 32)
+                skeletonCircle(size: 32)
+                Spacer()
+            }
+
+            Divider()
+
+            // 設定セクションスケルトン
+            VStack(alignment: .leading, spacing: 12) {
+                skeletonRow(height: 16, width: 80)
+                skeletonRow(height: 20, width: 200)
+                skeletonRow(height: 20, width: 200)
+            }
+
+            Text("データを読み込み中...")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .padding(.top, 4)
+        }
+        .padding()
+        .frame(minWidth: 320, idealWidth: 360, maxWidth: 420)
+    }
+
+    /// スケルトン用矩形
+    @ViewBuilder
+    private func skeletonRow(height: CGFloat, width: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: 4)
+            .fill(Color.secondary.opacity(0.2))
+            .frame(width: width, height: height)
+            .shimmer()
+    }
+
+    /// スケルトン用円形
+    @ViewBuilder
+    private func skeletonCircle(size: CGFloat) -> some View {
+        Circle()
+            .fill(Color.secondary.opacity(0.2))
+            .frame(width: size, height: size)
+            .shimmer()
+    }
+}
+
+// MARK: - シマーエフェクト
+
+extension View {
+    /// シマーエフェクト（読み込み中のアニメーション）
+    @ViewBuilder
+    func shimmer() -> some View {
+        self.overlay(
+            RoundedRectangle(cornerRadius: 4)
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            .clear,
+                            Color.white.opacity(0.3),
+                            .clear
+                        ]),
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .onAppear {
+                    // シマーアニメーションは簡易版
+                }
+        )
     }
 }

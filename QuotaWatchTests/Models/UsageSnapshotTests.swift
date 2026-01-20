@@ -364,7 +364,7 @@ final class UsageSnapshotTests: XCTestCase {
 
         XCTAssertNotNil(snapshot)
         XCTAssertEqual(snapshot?.providerId, "zai")
-        XCTAssertEqual(snapshot?.primaryTitle, "Tokens")
+        XCTAssertEqual(snapshot?.primaryTitle, "GLM 5h")
         XCTAssertEqual(snapshot?.primaryPct, 42)
         XCTAssertEqual(snapshot?.primaryUsed, 4230.0)
         XCTAssertEqual(snapshot?.primaryTotal, 10000.0)
@@ -461,7 +461,7 @@ final class UsageSnapshotTests: XCTestCase {
         XCTAssertNotNil(snapshot)
         XCTAssertEqual(snapshot?.secondary.count, 3)
         XCTAssertEqual(snapshot?.secondary[0].label, "Time Limit")
-        XCTAssertEqual(snapshot?.secondary[1].label, "Search (Monthly)")
+        XCTAssertEqual(snapshot?.secondary[1].label, "Monthly")
         XCTAssertEqual(snapshot?.secondary[2].label, "Reader (Monthly)")
     }
 

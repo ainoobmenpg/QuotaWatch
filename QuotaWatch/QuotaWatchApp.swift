@@ -25,7 +25,7 @@ struct QuotaWatchApp: App {
                     OnboardingView(
                         onComplete: {
                             Task {
-                                await onboardingManager.markCompleted()
+                                onboardingManager.markCompleted()
                                 // Engineをセットアップ
                                 await appDelegate.setupEngine()
                             }

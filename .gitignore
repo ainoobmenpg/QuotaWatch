@@ -25,3 +25,8 @@ Pods/
 # Xcode 生成ファイル（バックアップ・重複・テンプレート）
 *.bak/
 *Tests/QuotaWatchTests.swift
+
+# Xcode ビルド生成物
+build/
+*.xcarchive/
+DerivedData/

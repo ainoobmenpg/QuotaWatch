@@ -72,7 +72,7 @@ final class QuotaEngineRunLoopTests: XCTestCase {
         )
         try await testPersistence.saveState(initialState)
 
-        let engine = await QuotaEngine(
+        let engine = try await QuotaEngine(
             provider: mockProvider,
             persistence: testPersistence,
             keychain: testKeychain
@@ -110,7 +110,7 @@ final class QuotaEngineRunLoopTests: XCTestCase {
         )
         try await testPersistence.saveState(initialState)
 
-        let engine = await QuotaEngine(
+        let engine = try await QuotaEngine(
             provider: mockProvider,
             persistence: testPersistence,
             keychain: testKeychain
@@ -179,7 +179,7 @@ final class QuotaEngineRunLoopTests: XCTestCase {
         try await testPersistence.saveState(initialState)
 
         // 3. Engineを初期化
-        let engine = await QuotaEngine(
+        let engine = try await QuotaEngine(
             provider: SlowProvider(),
             persistence: testPersistence,
             keychain: testKeychain
@@ -203,7 +203,7 @@ final class QuotaEngineRunLoopTests: XCTestCase {
     func testStartRunLoopMultipleTimes() async throws {
         try await testKeychain.write(apiKey: "test_api_key")
 
-        let engine = await QuotaEngine(
+        let engine = try await QuotaEngine(
             provider: ZaiProvider(),
             persistence: testPersistence,
             keychain: testKeychain
@@ -222,7 +222,7 @@ final class QuotaEngineRunLoopTests: XCTestCase {
     func testStopRunLoopMultipleTimes() async throws {
         try await testKeychain.write(apiKey: "test_api_key")
 
-        let engine = await QuotaEngine(
+        let engine = try await QuotaEngine(
             provider: ZaiProvider(),
             persistence: testPersistence,
             keychain: testKeychain
@@ -255,7 +255,7 @@ final class QuotaEngineRunLoopTests: XCTestCase {
         )
         try await testPersistence.saveState(initialState)
 
-        let engine = await QuotaEngine(
+        let engine = try await QuotaEngine(
             provider: ZaiProvider(),
             persistence: testPersistence,
             keychain: testKeychain

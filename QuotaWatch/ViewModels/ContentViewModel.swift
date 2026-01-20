@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import OSLog
 import SwiftUI
 import UserNotifications
 
@@ -96,6 +95,9 @@ public final class ContentViewModel: ObservableObject {
     /// エラーメッセージ
     @Published private(set) var errorMessage: String?
 
+    /// 初期データロード中かどうか
+    @Published private(set) var isLoadingInitialData: Bool = true
+
     /// アプリ設定
     @Published private(set) var appSettings: AppSettings
 
@@ -103,10 +105,6 @@ public final class ContentViewModel: ObservableObject {
 
     /// ストリーム監視用Task
     private var streamObservationTask: Task<Void, Never>?
-
-    // MARK: - ロガー
-
-    private let logger = Logger(subsystem: "com.quotawatch.viewmodel", category: "ContentViewModel")
 
     // MARK: - 初期化
 
@@ -129,9 +127,16 @@ public final class ContentViewModel: ObservableObject {
     ///
     /// 初期化完了を待ちたい場合は、このメソッドを呼び出してください。
     public func loadInitialData() async {
+        // AppSettingsのupdateIntervalをEngineに反映
+        await engine.setBaseInterval(TimeInterval(appSettings.updateInterval.rawValue))
+
         await updateState()
         // AsyncStream監視を開始
         startObservingEngine()
+
+        // 初期ロード完了
+        isLoadingInitialData = false
+        await loggerManager.log("初期データロード完了", category: "UI")
     }
 
     // MARK: - 状態同期
@@ -155,6 +160,15 @@ public final class ContentViewModel: ObservableObject {
 
     /// メニューバータイトルを更新
     private func updateMenuBarTitle() {
+        // 初期ロード中は「...」を表示
+        if isLoadingInitialData {
+            menuBarTitle = "..."
+            Task {
+                await loggerManager.log("メニューバータイトル更新: ...（初期ロード中）", category: "UI")
+            }
+            return
+        }
+
         guard let snapshot = snapshot else {
             menuBarTitle = "N/A"
             Task {
@@ -188,11 +202,15 @@ public final class ContentViewModel: ObservableObject {
     private func startObservingEngine() {
         // 既に監視中の場合は何もしない
         guard streamObservationTask == nil else {
-            logger.debug("AsyncStream監視は既に開始されています")
+            Task {
+                await loggerManager.log("AsyncStream監視は既に開始されています", category: "UI")
+            }
             return
         }
 
-        logger.debug("AsyncStream監視を開始します")
+        Task {
+            await loggerManager.log("AsyncStream監視を開始します", category: "UI")
+        }
 
         streamObservationTask = Task {
             for await event in await engine.getEventStream() {
@@ -210,23 +228,19 @@ public final class ContentViewModel: ObservableObject {
             self.snapshot = snapshot
             updateMenuBarTitle()
             await loggerManager.log("スナップショット更新: \(snapshot.primaryTitle)", category: "UI")
-            logger.log("[UI] スナップショット更新: \(snapshot.primaryTitle)")
 
         case .fetchStarted:
             isFetching = true
             await loggerManager.log("フェッチ状態更新: true", category: "UI")
-            logger.debug("[UI] フェッチ開始")
 
         case .fetchSucceeded:
             isFetching = false
             await loggerManager.log("フェッチ成功", category: "UI")
-            logger.log("[UI] フェッチ成功")
 
         case .fetchFailed(let error):
             isFetching = false
             errorMessage = error
             await loggerManager.log("フェッチ失敗: \(error)", category: "UI")
-            logger.error("[UI] フェッチ失敗: \(error)")
         }
     }
 
@@ -254,9 +268,9 @@ public final class ContentViewModel: ObservableObject {
         do {
             _ = try await engine.forceFetch()
             await updateState()
-            logger.log("強制フェッチ成功")
+            await loggerManager.log("強制フェッチ成功", category: "UI")
         } catch {
-            logger.error("強制フェッチエラー: \(error.localizedDescription)")
+            await loggerManager.log("強制フェッチエラー: \(error.localizedDescription)", category: "UI")
             errorMessage = error.localizedDescription
         }
 
@@ -277,9 +291,9 @@ public final class ContentViewModel: ObservableObject {
                 title: "QuotaWatch テスト通知",
                 body: "これはテスト通知です。通知設定が正常に動作しています。"
             )
-            logger.log("テスト通知を送信しました")
+            await loggerManager.log("テスト通知を送信しました", category: "UI")
         } catch {
-            logger.error("テスト通知エラー: \(error.localizedDescription)")
+            await loggerManager.log("テスト通知エラー: \(error.localizedDescription)", category: "UI")
             errorMessage = "通知の送信に失敗しました: \(error.localizedDescription)"
         }
     }
@@ -289,12 +303,12 @@ public final class ContentViewModel: ObservableObject {
     /// ダッシュボードを開く
     public func openDashboard() async {
         guard let dashboardURL = provider.dashboardURL else {
-            logger.warning("ダッシュボードURLが設定されていません")
+            await loggerManager.log("ダッシュボードURLが設定されていません", category: "UI")
             return
         }
 
         NSWorkspace.shared.open(dashboardURL)
-        logger.log("ダッシュボードを開きました: \(dashboardURL)")
+        await loggerManager.log("ダッシュボードを開きました: \(dashboardURL)", category: "UI")
     }
 
     // MARK: - 設定管理
@@ -303,7 +317,7 @@ public final class ContentViewModel: ObservableObject {
     ///
     /// - Parameter interval: 更新間隔
     public func setUpdateInterval(_ interval: UpdateInterval) async {
-        logger.log("更新間隔を変更: \(interval.displayName)")
+        await loggerManager.log("更新間隔を変更: \(interval.displayName)", category: "UI")
         await engine.setBaseInterval(TimeInterval(interval.rawValue))
     }
 
@@ -311,7 +325,7 @@ public final class ContentViewModel: ObservableObject {
     ///
     /// - Parameter enabled: 有効にする場合はtrue
     public func setNotificationsEnabled(_ enabled: Bool) async {
-        logger.log("通知設定を変更: \(enabled ? "有効" : "無効")")
+        await loggerManager.log("通知設定を変更: \(enabled ? "有効" : "無効")", category: "UI")
 
         if enabled {
             // 権限がまだない場合は要求
@@ -320,7 +334,7 @@ public final class ContentViewModel: ObservableObject {
                 do {
                     _ = try await NotificationManager.shared.requestAuthorization()
                 } catch {
-                    logger.error("通知権限の取得に失敗: \(error.localizedDescription)")
+                    await loggerManager.log("通知権限の取得に失敗: \(error.localizedDescription)", category: "UI")
                     errorMessage = "通知権限の取得に失敗しました"
                 }
             }
@@ -333,7 +347,7 @@ public final class ContentViewModel: ObservableObject {
     public func setLoginItemEnabled(_ enabled: Bool) async {
         // AppSettingsを直接更新（didSetでupdateLoginItemStatusが呼ばれる）
         appSettings.loginItemEnabled = enabled
-        logger.log("Login Item設定を変更: \(enabled ? "有効" : "無効")")
+        await loggerManager.log("Login Item設定を変更: \(enabled ? "有効" : "無効")", category: "UI")
     }
 
     // MARK: - ユーティリティ

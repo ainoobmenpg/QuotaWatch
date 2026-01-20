@@ -34,6 +34,9 @@ final class MenuBarController: ObservableObject {
     /// NSHostingController（SwiftUI ViewをNSMenuに埋め込むため）
     private var hostingController: NSHostingController<MenuBarPopupView>?
 
+    /// 5時間を秒数で表現
+    private let fiveHoursInSeconds: Double = 5 * 60 * 60
+
     // MARK: - 初期化
 
     /// MenuBarControllerを初期化
@@ -53,8 +56,8 @@ final class MenuBarController: ObservableObject {
         )
         self.hostingController = NSHostingController(rootView: popupView)
 
-        // 初期タイトルを即座に設定
-        updateTitle()
+        // 初期表示を即座に設定
+        updateMenuBarIcon()
 
         // 監視を設定（prepend なし）
         setupObservation()
@@ -65,15 +68,15 @@ final class MenuBarController: ObservableObject {
 
     // MARK: - 設定
 
-    /// メニューバータイトル変更の監視を設定
+    /// メニューバー変更の監視を設定
     private func setupObservation() {
         guard let viewModel = viewModel else { return }
 
-        // 初期値を明示的に emit して監視
-        viewModel.$menuBarTitle
-            .prepend(viewModel.menuBarTitle)
-            .sink { [weak self] _ in
-                self?.updateTitle()
+        // snapshot の変更を監視（メインスレッドで実行）
+        viewModel.$snapshot
+            .receive(on: RunLoop.main)
+            .sink { [weak self] (_: UsageSnapshot?) in
+                self?.updateMenuBarIcon()
             }
             .store(in: &cancellables)
     }
@@ -111,17 +114,52 @@ final class MenuBarController: ObservableObject {
 
     // MARK: - 更新
 
-    /// メニューバーのタイトルを更新
-    private func updateTitle() {
+    /// メニューバーアイコンを更新
+    private func updateMenuBarIcon() {
         guard let button = statusItem.button else { return }
 
-        let title = viewModel?.menuBarTitle ?? "..."
-        button.title = title
-        button.sizeToFit()
+        // snapshotからデータを取得
+        guard let snapshot = viewModel?.snapshot,
+              let pct = snapshot.primaryPct,
+              let resetEpoch = snapshot.resetEpoch else {
+            // データがない場合はテキストを表示
+            button.title = viewModel?.menuBarTitle ?? "..."
+            button.image = nil
+            button.sizeToFit()
+            return
+        }
+
+        // 残り時間の進捗度を計算（5時間枠）
+        let now = Int(Date().timeIntervalSince1970)
+        let timeProgress: Double
+        if resetEpoch > now {
+            // 未リセット：進捗を計算
+            let periodStart = resetEpoch - Int(fiveHoursInSeconds)
+            let elapsed = max(0, Double(now - periodStart))
+            timeProgress = min(elapsed / fiveHoursInSeconds, 1.0)
+        } else {
+            // リセット済み：進捗0%
+            timeProgress = 0.0
+        }
+
+        // NSImage を直接生成
+        let icon = MenuBarDonutIcon(
+            usagePercentage: pct,
+            timeProgress: timeProgress,
+            diameter: 16
+        )
+        let image = icon.makeImage()
+
+        button.title = ""
+        button.image = image
+        button.image?.isTemplate = false
 
         // ログ出力
         Task { @MainActor in
-            await LoggerManager.shared.log("メニューバータイトル更新: \(title)", category: "MENUBAR")
+            await LoggerManager.shared.log(
+                "メニューバーアイコン更新: pct=\(pct)%, timeProgress=\(Int(timeProgress * 100))%",
+                category: "MENUBAR"
+            )
         }
     }
 

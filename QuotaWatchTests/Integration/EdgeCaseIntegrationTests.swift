@@ -71,7 +71,7 @@ final class EdgeCaseIntegrationTests: XCTestCase {
 
         try await keychain.write(apiKey: "test_api_key")
 
-        let engine = await QuotaEngine(
+        let engine = try await QuotaEngine(
             provider: provider,
             persistence: persistence,
             keychain: keychain
@@ -99,7 +99,7 @@ final class EdgeCaseIntegrationTests: XCTestCase {
         let persistence1 = PersistenceManager(customDirectoryURL: tempDir)
         let keychain1 = KeychainStore(account: "test_testCrashRecoveryRestoresSnapshot")
         try await keychain1.write(apiKey: "test_api_key")
-        let engine1 = await QuotaEngine(
+        let engine1 = try await QuotaEngine(
             provider: provider1,
             persistence: persistence1,
             keychain: keychain1
@@ -121,7 +121,7 @@ final class EdgeCaseIntegrationTests: XCTestCase {
         // 同じディレクトリとkeychainを再利用
         let provider2 = MockProvider()
         let persistence2 = PersistenceManager(customDirectoryURL: tempDir)
-        let engine2 = await QuotaEngine(
+        let engine2 = try await QuotaEngine(
             provider: provider2,
             persistence: persistence2,
             keychain: keychain1
@@ -152,7 +152,7 @@ final class EdgeCaseIntegrationTests: XCTestCase {
         let persistence1 = PersistenceManager(customDirectoryURL: tempDir)
         let keychain1 = KeychainStore(account: "test_testCrashRecoveryCorrectsNextFetchEpoch")
         try await keychain1.write(apiKey: "test_api_key")
-        let engine1 = await QuotaEngine(
+        let engine1 = try await QuotaEngine(
             provider: provider1,
             persistence: persistence1,
             keychain: keychain1
@@ -176,7 +176,7 @@ final class EdgeCaseIntegrationTests: XCTestCase {
         // 同じディレクトリとkeychainを再利用
         let provider2 = MockProvider()
         let persistence2 = PersistenceManager(customDirectoryURL: tempDir)
-        let engine2 = await QuotaEngine(
+        let engine2 = try await QuotaEngine(
             provider: provider2,
             persistence: persistence2,
             keychain: keychain1
@@ -289,7 +289,7 @@ final class EdgeCaseIntegrationTests: XCTestCase {
 
         // APIキーを設定しない
 
-        let engine = await QuotaEngine(
+        let engine = try await QuotaEngine(
             provider: provider,
             persistence: persistence,
             keychain: keychain
