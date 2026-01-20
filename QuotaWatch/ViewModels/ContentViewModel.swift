@@ -76,6 +76,9 @@ public final class ContentViewModel: ObservableObject {
     /// Provider（Z.ai等）
     private let provider: Provider
 
+    /// ロガーマネージャー
+    private let loggerManager: LoggerManager = .shared
+
     // MARK: - UI状態（@Published）
 
     /// 現在のスナップショット
@@ -85,7 +88,7 @@ public final class ContentViewModel: ObservableObject {
     @Published private(set) var engineState: EngineState?
 
     /// メニューバータイトル
-    @Published private(set) var menuBarTitle: String = "QuotaWatch"
+    @Published private(set) var menuBarTitle: String = "..."
 
     /// フェッチ中かどうか
     @Published private(set) var isFetching: Bool = false
@@ -95,6 +98,11 @@ public final class ContentViewModel: ObservableObject {
 
     /// アプリ設定
     @Published private(set) var appSettings: AppSettings
+
+    // MARK: - ストリーム監視
+
+    /// ストリーム監視用Task
+    private var streamObservationTask: Task<Void, Never>?
 
     // MARK: - ロガー
 
@@ -111,6 +119,10 @@ public final class ContentViewModel: ObservableObject {
         self.engine = engine
         self.provider = provider
         self.appSettings = AppSettings()
+
+        Task {
+            await loggerManager.log("ContentViewModel初期化完了", category: "UI")
+        }
     }
 
     /// 初期データを非同期で読み込み
@@ -118,6 +130,8 @@ public final class ContentViewModel: ObservableObject {
     /// 初期化完了を待ちたい場合は、このメソッドを呼び出してください。
     public func loadInitialData() async {
         await updateState()
+        // AsyncStream監視を開始
+        startObservingEngine()
     }
 
     // MARK: - 状態同期
@@ -142,7 +156,10 @@ public final class ContentViewModel: ObservableObject {
     /// メニューバータイトルを更新
     private func updateMenuBarTitle() {
         guard let snapshot = snapshot else {
-            menuBarTitle = "Quota N/A"
+            menuBarTitle = "N/A"
+            Task {
+                await loggerManager.log("メニューバータイトル更新: N/A", category: "UI")
+            }
             return
         }
 
@@ -159,6 +176,72 @@ public final class ContentViewModel: ObservableObject {
         }
 
         menuBarTitle = title
+
+        Task {
+            await loggerManager.log("メニューバータイトル更新: \(title)", category: "UI")
+        }
+    }
+
+    // MARK: - ストリーム監視
+
+    /// エンジンのAsyncStream監視を開始
+    private func startObservingEngine() {
+        // 既に監視中の場合は何もしない
+        guard streamObservationTask == nil else {
+            logger.debug("AsyncStream監視は既に開始されています")
+            return
+        }
+
+        logger.debug("AsyncStream監視を開始します")
+
+        streamObservationTask = Task {
+            for await event in await engine.getEventStream() {
+                await handleEvent(event)
+            }
+        }
+    }
+
+    /// エンジンイベントをハンドル
+    private func handleEvent(_ event: QuotaEngineEvent) async {
+        await loggerManager.log("イベント受信: \(eventTypeString(event))", category: "UI")
+
+        switch event {
+        case .snapshotUpdated(let snapshot):
+            self.snapshot = snapshot
+            updateMenuBarTitle()
+            await loggerManager.log("スナップショット更新: \(snapshot.primaryTitle)", category: "UI")
+            logger.log("[UI] スナップショット更新: \(snapshot.primaryTitle)")
+
+        case .fetchStarted:
+            isFetching = true
+            await loggerManager.log("フェッチ状態更新: true", category: "UI")
+            logger.debug("[UI] フェッチ開始")
+
+        case .fetchSucceeded:
+            isFetching = false
+            await loggerManager.log("フェッチ成功", category: "UI")
+            logger.log("[UI] フェッチ成功")
+
+        case .fetchFailed(let error):
+            isFetching = false
+            errorMessage = error
+            await loggerManager.log("フェッチ失敗: \(error)", category: "UI")
+            logger.error("[UI] フェッチ失敗: \(error)")
+        }
+    }
+
+    /// イベントタイプの文字列表現を取得
+    private func eventTypeString(_ event: QuotaEngineEvent) -> String {
+        switch event {
+        case .snapshotUpdated:
+            return "snapshotUpdated"
+        case .fetchStarted:
+            return "fetchStarted"
+        case .fetchSucceeded:
+            return "fetchSucceeded"
+        case .fetchFailed:
+            return "fetchFailed"
+        }
     }
 
     // MARK: - ユーザーアクション
@@ -263,6 +346,15 @@ public final class ContentViewModel: ObservableObject {
     /// ダッシュボードURL
     var dashboardURL: URL? {
         return provider.dashboardURL
+    }
+
+    // MARK: - ログエクスポート
+
+    /// デバッグログをDesktopにエクスポート
+    ///
+    /// - Returns: エクスポート成功時はファイルパス、失敗時はnil
+    public func exportDebugLog() async -> URL? {
+        return await loggerManager.exportToDesktop()
     }
 }
 

@@ -51,6 +51,9 @@ public actor QuotaEngine {
     /// APIキーストア
     private let keychain: KeychainStore
 
+    /// ロガーマネージャー
+    private let loggerManager: LoggerManager = .shared
+
     // MARK: - 状態
 
     /// アプリケーション実行状態
@@ -74,6 +77,14 @@ public actor QuotaEngine {
     /// スリープ復帰検知用オブザーバー
     private var sleepObserver: NSObjectProtocol?
 
+    // MARK: - AsyncStream
+
+    /// AsyncStream（ViewModelへのイベント通知用）
+    private let eventStream: AsyncStream<QuotaEngineEvent>
+
+    /// AsyncStreamの継続
+    private let eventContinuation: AsyncStream<QuotaEngineEvent>.Continuation
+
     // MARK: - ロガー
 
     private let logger = Logger(subsystem: "com.quotawatch.engine", category: "QuotaEngine")
@@ -87,25 +98,56 @@ public actor QuotaEngine {
     ///   - persistence: 永続化管理
     ///   - keychain: APIキーストア
     ///   - clock: Clock（デフォルト: ContinuousClock）
+    /// - Throws: QuotaEngineError（APIキー未設定、Keychainアクセスエラー等）
     public init(
         provider: Provider,
         persistence: PersistenceManager,
         keychain: KeychainStore,
         clock: ContinuousClock = ContinuousClock()
-    ) async {
+    ) async throws {
         self.provider = provider
         self.persistence = persistence
         self.keychain = keychain
         self.clock = clock
         self.baseInterval = AppConstants.minBaseInterval
 
+        // AsyncStreamを作成
+        var stream: AsyncStream<QuotaEngineEvent>?
+        var cont: AsyncStream<QuotaEngineEvent>.Continuation?
+        stream = AsyncStream<QuotaEngineEvent> { continuation in
+            cont = continuation
+        }
+        // 強制アンラップ（AsyncStreamのイニシャライザは必ず継続を呼ぶ）
+        self.eventStream = stream!
+        self.eventContinuation = cont!
+        await loggerManager.log("QuotaEngine初期化開始: AsyncStreamを作成しました", category: "ENGINE")
+
         // 状態を復元
         self.state = await persistence.loadOrDefaultState()
 
         logger.log("QuotaEngine初期化: provider=\(provider.id)")
 
+        // APIキーの存在チェック（初期化時に行うことで、起動時にすぐUIで検出可能にする）
+        do {
+            guard try await keychain.read() != nil else {
+                logger.error("初期化時チェック: APIキーが設定されていません")
+                throw QuotaEngineError.apiKeyNotSet
+            }
+        } catch let error as KeychainError {
+            // itemNotFound は APIキー未設定として扱う
+            if case .itemNotFound = error {
+                logger.error("初期化時チェック: APIキーが設定されていません")
+                throw QuotaEngineError.apiKeyNotSet
+            }
+            // その他の Keychainアクセスエラー（アクセス拒否等）は致命的エラー
+            logger.error("初期化時Keychainアクセスエラー: \(error)")
+            throw QuotaEngineError.fatalError("Keychainアクセスに失敗しました: \(error.localizedDescription)")
+        }
+
         // 強制終了後の復旧処理
         await recoverFromCrash()
+
+        await loggerManager.log("QuotaEngine初期化完了", category: "ENGINE")
     }
 
     // MARK: - 公開API - 状態取得
@@ -115,6 +157,13 @@ public actor QuotaEngine {
     /// - Returns: 現在のスナップショット（存在しない場合はnil）
     public func getCurrentSnapshot() -> UsageSnapshot? {
         return currentSnapshot
+    }
+
+    /// イベントストリームを取得
+    ///
+    /// - Returns: QuotaEngineイベントを配信するAsyncStream
+    public func getEventStream() -> AsyncStream<QuotaEngineEvent> {
+        return eventStream
     }
 
     /// 現在の状態を取得
@@ -232,17 +281,21 @@ public actor QuotaEngine {
     /// - Returns: UsageSnapshot
     /// - Throws: QuotaEngineError, ProviderError
     private func performFetch() async throws -> UsageSnapshot {
+        await loggerManager.log("フェッチ開始", category: "FETCH")
+
         // APIキーを取得
         let apiKey: String
         do {
             guard let key = try await keychain.read() else {
                 logger.error("APIキーが設定されていません")
+                await loggerManager.log("フェッチ失敗: APIキーが設定されていません", category: "FETCH")
                 throw QuotaEngineError.apiKeyNotSet
             }
             apiKey = key
         } catch let error as KeychainError {
             // Keychainアクセスエラー（アクセス拒否等）は致命的エラー
             logger.error("Keychainアクセスエラー: \(error)")
+            await loggerManager.log("フェッチ失敗: Keychainアクセスエラー - \(error.localizedDescription)", category: "FETCH")
             throw QuotaEngineError.fatalError("Keychainアクセスに失敗しました: \(error.localizedDescription)")
         }
 
@@ -257,6 +310,12 @@ public actor QuotaEngine {
 
         // 最終フェッチ時刻を更新
         state.lastFetchEpoch = Date().epochSeconds
+
+        await loggerManager.log("フェッチ成功: \(snapshot.primaryTitle)", category: "FETCH")
+
+        // UI更新通知（AsyncStream経由）
+        await loggerManager.log("イベント送信: snapshotUpdated", category: "STREAM")
+        eventContinuation.yield(.snapshotUpdated(snapshot))
 
         return snapshot
     }
@@ -348,13 +407,16 @@ public actor QuotaEngine {
     /// 3. 連続失敗カウンターが閾値以上の場合、リセット
     private func recoverFromCrash() async {
         logger.debug("復旧処理開始")
+        await loggerManager.log("復旧処理開始", category: "ENGINE")
 
         // キャッシュからスナップショットを復元
         if let snapshot = await persistence.loadCacheOrDefault() {
             currentSnapshot = snapshot
             logger.log("キャッシュ復元成功: \(snapshot.primaryTitle)")
+            await loggerManager.log("キャッシュ復元成功: \(snapshot.primaryTitle)", category: "ENGINE")
         } else {
             logger.debug("キャッシュが存在しません")
+            await loggerManager.log("キャッシュが存在しません", category: "ENGINE")
         }
 
         // nextFetchEpochが過去の場合、現在時刻に補正
@@ -374,6 +436,7 @@ public actor QuotaEngine {
         try? await persistence.saveState(self.state)
 
         logger.log("復旧処理完了: nextFetch=\(self.state.nextFetchEpoch)")
+        await loggerManager.log("復旧処理完了: nextFetch=\(self.state.nextFetchEpoch)", category: "ENGINE")
     }
 
     // MARK: - 公開API - 設定更新
@@ -519,26 +582,25 @@ public actor QuotaEngine {
 
     /// スリープ復帰検知用の通知監視を設定
     ///
-    /// Actor内で直接NotificationCenterを使用できないため、
-    /// ダミーパススルー関数を経由して設定します。
-    ///
-    /// 注: Swift 6のactorとMainActorの相互作用により、
-    /// スリープ復帰検知は暫定的に無効化しています。
-    /// 将来的に別のアプローチで実装する予定です。
+    /// ResetNotifier経由でスリープ復帰を検知するため、ここでは何も行いません。
+    /// 実際の復帰処理は `handleWakeFromSleep()` で行われます。
     private func setupSleepObserver() {
-        // TODO: #16 Swift 6のactorモデルに対応したスリープ復帰検知を実装
-        logger.debug("スリープ復帰検知は暫定的に無効化されています（Issue #16）")
+        // ResetNotifier経由でスリープ復帰を検知するため、ここでは何も行いません
+        logger.debug("スリープ復帰検知はResetNotifier経由で行われます（Issue #16解決）")
     }
 
-    /// スリープ復帰ハンドラ
+    /// スリープ復帰ハンドラ（ResetNotifierから呼ばれる）
     ///
     /// 復帰時、現在時刻が次回フェッチ時刻以上の場合は即時フェッチを実行します。
-    private func handleWake() async {
-        logger.log("スリープから復帰しました")
+    /// - Note: ResetNotifier.handleWakeNotification() から呼び出されます（Issue #16解決）
+    public func handleWakeFromSleep() async {
+        logger.log("スリープから復帰しました - QuotaEngine")
+        await loggerManager.log("スリープから復帰しました - QuotaEngine", category: "ENGINE")
 
         let now = Date().epochSeconds
         if now >= state.nextFetchEpoch {
             logger.log("スリープ復帰時: フェッチ時刻到達、即時フェッチを実行します")
+            await loggerManager.log("スリープ復帰時: フェッチ時刻到達、即時フェッチを実行します", category: "ENGINE")
             do {
                 _ = try await fetch()
             } catch {
@@ -560,6 +622,18 @@ public actor QuotaEngine {
     /// - Parameter epoch: 次回フェッチ時刻（epoch秒）
     public func overrideNextFetchEpoch(_ epoch: Int) {
         self.state.nextFetchEpoch = epoch
+    }
+
+    /// ログ内容取得（テスト用）
+    ///
+    /// - Returns: デバッグログの内容
+    public func getDebugLogContents() async -> String {
+        return await loggerManager.getDebugLogContents()
+    }
+
+    /// ログクリア（テスト用）
+    public func clearDebugLog() async {
+        await loggerManager.clearDebugLog()
     }
     #endif
 }

@@ -82,7 +82,7 @@ struct APIKeySettingsSheet: View {
                 .font(.caption)
         }
         .padding()
-        .frame(width: 400, height: 250)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: - プライベートメソッド

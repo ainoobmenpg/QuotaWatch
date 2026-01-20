@@ -312,33 +312,35 @@ public func calculatePercentage(percentage: Double?, usage: Double, total: Doubl
 
 /// Z.aiのプライマリクォータタイプ
 private enum PrimaryQuotaType: String {
-    case tokensLimit = "TOKENS_LIMIT"
+    case tokens5h = "TOKENS_5H"
 
     /// 指定されたタイプがプライマリかどうかを判定
+    /// TOKENSで始まるタイプをプライマリとして判定
     static func isPrimary(_ type: String) -> Bool {
-        return type == tokensLimit.rawValue
+        return type.hasPrefix("TOKENS")
     }
 }
 
-/// タイプから表示用タイトルを生成（例: "TOKENS_LIMIT" → "Tokens"）
+/// タイプから表示用タイトルを生成（例: "TOKENS_LIMIT" → "GLM 5h"）
 private func formatTitle(for type: String) -> String {
     switch type.uppercased() {
-    case "TOKENS_LIMIT":
-        return "Tokens"
+    case "TOKENS_LIMIT", "TOKENS_5H":
+        return "GLM 5h"
     default:
         return type.replacingOccurrences(of: "_", with: " ").capitalized
     }
 }
 
-/// セカンダリ枠のラベルを生成（例: "WEB_SEARCH_MONTHLY" → "Search (Monthly)"）
+/// セカンダリ枠のラベルを生成（例: "WEB_SEARCH_MONTHLY" → "Monthly"）
 private func formatSecondaryLabel(for type: String) -> String {
     switch type.uppercased() {
     case "TIME_LIMIT":
         return "Time Limit"
-    case "TOKENS_LIMIT":
-        return "Tokens Limit"
+    // TOKENS_LIMIT はプライマリクォータなので削除（セカンダリに存在すべきでない）
     case "WEB_SEARCH_MONTHLY":
-        return "Search (Monthly)"
+        return "Monthly"
+    case "WEB_SEARCH_DAILY":
+        return "Daily"
     case "READER_MONTHLY":
         return "Reader (Monthly)"
     case "ZREAD_MONTHLY":
@@ -366,7 +368,12 @@ extension UsageSnapshot {
     ///   - includeDebugJson: デバッグJSONを含めるか（デフォルト: false）
     /// - Returns: 正規化されたUsageSnapshot。プライマリクォータがない場合はnil
     public init?(from quotaData: QuotaData, providerId: String = "zai", includeDebugJson: Bool = false) {
-        let fetchedAtEpoch = Date().epochSeconds
+        // デバッグログ：実際のtype値を確認
+        #if DEBUG
+        print("DEBUG: quotaData.limits.map(\\.type) = \\(quotaData.limits.map { $0.type })")
+        #endif
+
+        let fetchedAtEpoch = Int(Date().timeIntervalSince1970)
 
         // プライマリとセカンダリを分類
         var primary: QuotaLimit?

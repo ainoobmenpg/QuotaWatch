@@ -42,6 +42,12 @@ public actor PersistenceManager {
 
     private let customDirectoryURL: URL?
 
+    /// カスタムディレクトリ（DebugLogger等で使用）
+    public nonisolated var customDirectory: URL {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            .appending(path: Bundle.main.bundleIdentifier ?? "com.quotawatch")
+    }
+
     public init() {
         self.customDirectoryURL = nil
         logger.log("PersistenceManager初期化")

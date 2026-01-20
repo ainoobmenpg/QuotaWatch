@@ -44,6 +44,9 @@ public actor NotificationManager {
     private let center = UNUserNotificationCenter.current()
     private let logger = Logger(subsystem: "com.quotawatch.notifications", category: "NotificationManager")
 
+    /// ロガーマネージャー
+    private let loggerManager: LoggerManager = .shared
+
     private init() {}
 
     // MARK: - 公開API - 権限管理
@@ -56,6 +59,7 @@ public actor NotificationManager {
         let options: UNAuthorizationOptions = [.alert, .sound]
         let granted = try await center.requestAuthorization(options: options)
         logger.log("通知権限要求結果: \(granted)")
+        await loggerManager.log("通知権限要求結果: \(granted)", category: "NOTIFY")
 
         if !granted {
             throw NotificationManagerError.notAuthorized
@@ -85,6 +89,7 @@ public actor NotificationManager {
         let status = await getAuthorizationStatus()
         if status != .authorized {
             logger.error("通知権限がありません: \(status.rawValue)")
+            await loggerManager.log("通知権限がありません: \(status.rawValue)", category: "NOTIFY")
             throw NotificationManagerError.notAuthorized
         }
 
@@ -110,8 +115,10 @@ public actor NotificationManager {
         do {
             try await center.add(request)
             logger.log("通知を送信: \(title)")
+            await loggerManager.log("通知を送信: \(title)", category: "NOTIFY")
         } catch {
             logger.error("通知送信エラー: \(error.localizedDescription)")
+            await loggerManager.log("通知送信エラー: \(error.localizedDescription)", category: "NOTIFY")
             throw NotificationManagerError.addFailed(error.localizedDescription)
         }
     }

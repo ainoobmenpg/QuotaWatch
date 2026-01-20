@@ -36,6 +36,7 @@ public actor ResetNotifier {
     private let engine: QuotaEngine
     private let notificationManager: NotificationManager
     private let persistence: PersistenceManager
+    private let loggerManager: LoggerManager = .shared
     private var task: Task<Void, Never>?
 
     /// スリープ復帰検知用オブザーバー
@@ -60,6 +61,9 @@ public actor ResetNotifier {
     public func start() {
         guard task == nil else { return }
         logger.log("ResetNotifierを開始")
+        Task {
+            await loggerManager.log("ResetNotifierを開始", category: "RESET")
+        }
 
         task = Task {
             await runLoop()
@@ -82,6 +86,9 @@ public actor ResetNotifier {
         }
 
         logger.log("ResetNotifierを停止")
+        Task {
+            await loggerManager.log("ResetNotifierを停止", category: "RESET")
+        }
     }
 
     // MARK: - 内部メソッド - runLoop
@@ -114,6 +121,7 @@ public actor ResetNotifier {
            state.lastNotifiedResetEpoch != state.lastKnownResetEpoch {
 
             logger.log("リセット検知: 通知を送信します")
+            await loggerManager.log("リセット検知: 通知を送信します", category: "RESET")
 
             // 通知送信
             do {
@@ -130,12 +138,15 @@ public actor ResetNotifier {
                 try await persistence.saveState(updatedState)
 
                 logger.log("通知送信成功: epochを\(updatedState.lastKnownResetEpoch)に更新")
+                await loggerManager.log("通知送信成功: epoch=\(updatedState.lastKnownResetEpoch)", category: "RESET")
 
             } catch let error as NotificationManagerError {
                 logger.error("通知送信エラー: \(error.localizedDescription)")
+                await loggerManager.log("通知送信エラー: \(error.localizedDescription)", category: "RESET")
                 throw ResetNotifierError.notificationFailed(error.localizedDescription)
             } catch {
                 logger.error("状態保存エラー: \(error.localizedDescription)")
+                await loggerManager.log("状態保存エラー: \(error.localizedDescription)", category: "RESET")
                 throw ResetNotifierError.stateSaveFailed(error.localizedDescription)
             }
         }
@@ -172,13 +183,21 @@ public actor ResetNotifier {
     }
 
     /// スリープ復帰ハンドラ
+    ///
+    /// ResetNotifierのリセットチェックと、QuotaEngineへの即時フェッチ要求を実行します。
     private func handleWakeNotification() async {
         logger.log("スリープから復帰しました - 即時チェックを実行")
+        await loggerManager.log("スリープから復帰しました - ResetNotifier", category: "RESET")
 
+        // ResetNotifierのリセットチェック
         do {
             try await checkReset()
         } catch {
             logger.error("スリープ復帰時のチェックエラー: \(error.localizedDescription)")
+            await loggerManager.log("スリープ復帰時のチェックエラー: \(error.localizedDescription)", category: "RESET")
         }
+
+        // QuotaEngineへの即時フェッチ要求（Issue #16対応）
+        await engine.handleWakeFromSleep()
     }
 }

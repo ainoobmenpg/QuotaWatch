@@ -23,6 +23,9 @@ struct SettingsView: View {
     /// Login Item設定変更アクション
     let onLoginItemChanged: (Bool) async -> Void
 
+    /// ログエクスポートアクション
+    let onExportLog: () async -> Void
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("設定")
@@ -102,6 +105,23 @@ struct SettingsView: View {
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
+
+                    Spacer()
+                }
+
+                // ログエクスポート
+                HStack {
+                    Text("ログ:")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    Button("ログをエクスポート") {
+                        Task {
+                            await onExportLog()
+                        }
+                    }
+                    .buttonStyle(.borderless)
+                    .font(.caption)
 
                     Spacer()
                 }

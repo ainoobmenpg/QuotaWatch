@@ -16,6 +16,14 @@
 - [ ] `service=zai_api_key`（SwiftBar互換）で保存/取得
 - [ ] APIキー未設定時のUI導線
 
+## T2.5: ログ機能
+- [x] `LoggerManager`（actor）- ログ出力を一元管理
+- [x] `DebugLogger`（actor）- テキストファイルにログを出力
+- [x] DEBUG/RELEASE両ビルドでログ出力をサポート
+- [x] ログサイズ制限（100KB）とローテーション
+- [x] ログのエクスポート機能（Desktopへコピー）
+- [x] カテゴリ別ログ出力（テストヘルパー付き）
+
 ## T3: Provider（抽象は最小 / 実装はZ.aiのみ）
 - [ ] `Provider` protocol を定義
 - [ ] `ZaiProvider` を実装（Networking + 解析 + `UsageSnapshot`正規化）
@@ -61,8 +69,19 @@
 - [ ] ログイン時起動トグルが動作する
 
 ### エッジケース（受け入れ基準に追加）
-- [ ] アプリ強制終了後、起動時に `state.json` から状態が復旧される
-- [ ] macOSスリープ復帰時、`nextFetchAt` が経過していれば即時フェッチが実行される
-- [ ] 長時間スリープ後、通知チェックが即座に実行され取りこぼしがない
-- [ ] ネットワーク切断時、`lastError` に適切なエラーメッセージが表示される
-- [ ] `usage_cache.json` 破損時、"no cache" 表示がされる
+- [x] アプリ強制終了後、起動時に `state.json` から状態が復旧される
+  - 自動テスト: `EdgeCaseIntegrationTests.testCrashRecoveryRestoresSnapshot()`
+  - 手動テスト: `11_testing.md` 「強制終了後の復旧の確認」参照
+- [x] macOSスリープ復帰時、`nextFetchAt` が経過していれば即時フェッチが実行される
+  - 自動テスト: `SleepWakeIntegrationTests.testWakeFromSleepTriggersImmediateFetch()`
+  - 手動テスト: `11_testing.md` 「スリープ復帰の確認」参照
+- [x] 長時間スリープ後、通知チェックが即座に実行され取りこぼしがない
+  - 自動テスト: `SleepWakeIntegrationTests.testResetNotifierWakeupIntegration()`
+  - 手動テスト: `11_testing.md` 「スリープ復帰の確認」参照
+- [x] ネットワーク切断時、`lastError` に適切なエラーメッセージが表示される
+  - 自動テスト: `EdgeCaseIntegrationTests.testNetworkErrorWithCachedData()`
+  - 手動テスト: `11_testing.md` 「エラー表示の確認」参照
+- [x] `usage_cache.json` 破損時、"no cache" 表示がされる
+  - 自動テスト: `EdgeCaseIntegrationTests.testCorruptedCacheFileHandledGracefully()`
+  - 手動テスト: `11_testing.md` 「キャッシュ破損の確認」参照
+

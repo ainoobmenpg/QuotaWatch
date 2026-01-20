@@ -66,6 +66,7 @@ ViewModel（@MainActor）
 - **UIは正規化済み `UsageSnapshot` のみ参照** - Provider生レスポンス構造を直接見ない
 - **actor + @MainActorで状態管理を単純化** - 競合を回避
 - **APIキーはKeychainのみ** - ディスク保存は禁止
+- **ログはLoggerManagerで一元管理** - DEBUG/RELEASE両ビルドでログ出力をサポート
 
 ## データモデル
 
@@ -103,6 +104,20 @@ UI/通知が参照する唯一のモデル:
 
 **状態スキーマ**: `spec/state_schema.json` 参照
 
+## ログ機能
+
+**LoggerManager（actor）** - ログ出力を一元管理:
+- `DebugLogger` のシングルトンインスタンスを管理
+- DEBUG/RELEASE両ビルドでログ出力をサポート
+- ログサイズ制限（100KB）とローテーション
+- ログのエクスポート機能（Desktopへコピー）
+- ログ出力先: `Application Support/<BundleID>/debug.log`
+
+**DebugLogger（actor）** - テキストファイルにログを出力:
+- ログフォーマット: `[ISO8601 timestamp] [CATEGORY] message`
+- カテゴリ別ログ出力（例: "FETCH", "ENGINE", "NOTIFICATION"）
+- ログローテーション（サイズ超過時に古いログから削除）
+
 ## セキュリティ
 
 - **APIキーはKeychainのみ保存**（`service=zai_api_key`）
@@ -125,7 +140,8 @@ UI/通知が参照する唯一のモデル:
 ## コーディング規約
 
 - **Swift 6** で実装
-- **OSLog** でカテゴリ別ロギング
+- **OSLog** でカテゴリ別ロギング（システムログ）
+- **LoggerManager** でデバッグログ出力（DEBUG/RELEASE両対応）
 - **async/await** を優先
 - **actor** による競合回避
 
@@ -309,12 +325,13 @@ gh pr create --title "..." --body "..."
 1. T0: プロジェクト雛形（MenuBarExtra）
 2. T1: 正規化モデル + Z.ai生モデル
 3. T2: KeychainStore
-4. T3: Provider（protocol + ZaiProvider）
-5. T4: 永続化層
-6. T5: QuotaEngine（actor）
-7. T6: ResetNotifier + NotificationManager
-8. T7: UI（グラフィカル表示）
-8. T8: 設定（更新間隔/通知ON/OFF/Login Item）
+4. T2.5: ログ機能（LoggerManager + DebugLogger）
+5. T3: Provider（protocol + ZaiProvider）
+6. T4: 永続化層
+7. T5: QuotaEngine（actor）
+8. T6: ResetNotifier + NotificationManager
+9. T7: UI（グラフィカル表示）
+10. T8: 設定（更新間隔/通知ON/OFF/Login Item）
 
 ## 参考ドキュメント
 

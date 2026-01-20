@@ -63,6 +63,21 @@
 ### KeychainStore
 - APIキーの read/write/delete
 
+### LoggerManager（actor）
+- ログ出力を一元管理するマネージャー
+- 役割:
+  - `DebugLogger` のシングルトンインスタンスを管理
+  - DEBUG/RELEASE両ビルドでログ出力をサポート
+  - ログサイズ制限（100KB）とローテーション
+  - ログのエクスポート機能（Desktopへコピー）
+- ログ出力先: `Application Support/<BundleID>/debug.log`
+
+### DebugLogger（actor）
+- テキストファイルにログを出力するデバッグロガー
+- ログフォーマット: `[ISO8601 timestamp] [CATEGORY] message`
+- カテゴリ別ログ出力（例: "FETCH", "ENGINE", "NOTIFICATION"）
+- ログローテーション（サイズ超過時に古いログから削除）
+
 ### ViewModel（@MainActor）
 - Engine/Notifierの状態を購読し、SwiftUIへ供給
 
@@ -70,3 +85,4 @@
 - ViewModel -> (QuotaEngine, ResetNotifier, KeychainStore, SettingsStore)
 - QuotaEngine -> (Provider, Persistence)
 - ResetNotifier -> (NotificationManager, Persistence)
+- 各コンポーネント -> LoggerManager（ログ出力）
