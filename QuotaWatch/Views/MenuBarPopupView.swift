@@ -75,12 +75,34 @@ struct MenuBarPopupView: View {
     }
 
     @ViewBuilder
+    private func unauthorizedView() -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("APIキーが無効です", systemImage: "exclamationmark.shield")
+                .font(.headline)
+                .foregroundColor(.orange)
+
+            Text("APIキーが期限切れか無効です。設定で再確認してください。")
+                .font(.caption)
+                .foregroundColor(.secondary)
+
+            Button("設定を開く") {
+                appDelegate.showingAPIKeySheet = true
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .padding()
+    }
+
+    @ViewBuilder
     private func contentView(viewModel: ContentViewModel) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 if viewModel.isLoadingInitialData {
                     // スケルトンローダー（初期ロード中）
                     loadingSkeletonView()
+                } else if viewModel.authorizationError {
+                    // 認証エラー時の専用UI
+                    unauthorizedView()
                 } else {
                     // ヘッダー
                 if let engineState = viewModel.engineState {

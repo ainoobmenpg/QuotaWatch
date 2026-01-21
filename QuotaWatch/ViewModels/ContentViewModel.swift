@@ -95,6 +95,9 @@ public final class ContentViewModel: ObservableObject {
     /// エラーメッセージ
     @Published private(set) var errorMessage: String?
 
+    /// 認証エラー状態（APIキー無効等）
+    @Published private(set) var authorizationError: Bool = false
+
     /// 初期データロード中かどうか
     @Published private(set) var isLoadingInitialData: Bool = true
 
@@ -153,9 +156,19 @@ public final class ContentViewModel: ObservableObject {
         // エラーメッセージを更新
         if !appState.lastError.isEmpty {
             self.errorMessage = appState.lastError
+            // 認証エラーを判定
+            updateAuthorizationError(appState.lastError)
         } else {
             self.errorMessage = nil
+            self.authorizationError = false
         }
+    }
+
+    /// エラーメッセージから認証エラーかどうかを判定
+    private func updateAuthorizationError(_ message: String) {
+        // ProviderError.unauthorized のエラーメッセージで判定
+        let authErrorKeywords = ["認証に失敗", "認証エラー", "unauthorized", "401", "403"]
+        authorizationError = authErrorKeywords.contains { message.contains($0) }
     }
 
     /// メニューバータイトルを更新
@@ -235,11 +248,14 @@ public final class ContentViewModel: ObservableObject {
 
         case .fetchSucceeded:
             isFetching = false
+            authorizationError = false
             await loggerManager.log("フェッチ成功", category: "UI")
 
         case .fetchFailed(let error):
             isFetching = false
             errorMessage = error
+            // 認証エラーを判定
+            updateAuthorizationError(error)
             await loggerManager.log("フェッチ失敗: \(error)", category: "UI")
         }
     }
@@ -264,6 +280,7 @@ public final class ContentViewModel: ObservableObject {
     public func forceFetch() async {
         isFetching = true
         errorMessage = nil
+        authorizationError = false
 
         do {
             _ = try await engine.forceFetch()
@@ -272,6 +289,8 @@ public final class ContentViewModel: ObservableObject {
         } catch {
             await loggerManager.log("強制フェッチエラー: \(error.localizedDescription)", category: "UI")
             errorMessage = error.localizedDescription
+            // 認証エラーを判定
+            updateAuthorizationError(error.localizedDescription)
         }
 
         isFetching = false
