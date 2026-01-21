@@ -33,7 +33,7 @@ public enum ResetNotifierError: Error, Sendable, LocalizedError {
 
 /// クォータリセット通知を管理
 public actor ResetNotifier {
-    private let engine: QuotaEngine
+    private let engine: any QuotaEngineProtocol
     private let notificationManager: NotificationManager
     private let persistence: PersistenceManager
     private let loggerManager: LoggerManager = .shared
@@ -46,7 +46,7 @@ public actor ResetNotifier {
     private let logger = Logger(subsystem: "com.quotawatch.notifier", category: "ResetNotifier")
 
     public init(
-        engine: QuotaEngine,
+        engine: any QuotaEngineProtocol,
         notificationManager: NotificationManager = .shared,
         persistence: PersistenceManager
     ) {

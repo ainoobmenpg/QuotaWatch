@@ -11,41 +11,6 @@ import UserNotifications
 
 @testable import QuotaWatch
 
-// MARK: - Mock Notification Manager
-
-/// テスト用のモック通知マネージャー
-public actor MockNotificationManager {
-    public private(set) var sentNotifications: [(title: String, body: String)] = []
-    public private(set) var authorizationRequested: Bool = false
-    public var shouldFail: Bool = false
-    public var authorizationGranted: Bool = true
-
-    public init() {}
-
-    public func requestAuthorization() async throws -> Bool {
-        authorizationRequested = true
-        if !authorizationGranted {
-            throw NotificationManagerError.notAuthorized
-        }
-        return authorizationGranted
-    }
-
-    public func getAuthorizationStatus() async -> UNAuthorizationStatus {
-        return authorizationGranted ? .authorized : .denied
-    }
-
-    public func send(title: String, body: String) async throws {
-        if shouldFail {
-            throw NotificationManagerError.addFailed("Mock error")
-        }
-        sentNotifications.append((title, body))
-    }
-
-    public func setShouldFail(_ value: Bool) {
-        shouldFail = value
-    }
-}
-
 // MARK: - ResetNotifier Tests
 
 final class ResetNotifierTests: XCTestCase {
@@ -108,22 +73,6 @@ final class ResetNotifierTests: XCTestCase {
         XCTAssertEqual(testState.lastNotifiedResetEpoch, initialResetEpoch)
     }
 
-    func testNotificationErrorHandling() async throws {
-        let mockNotification = MockNotificationManager()
-        await mockNotification.setShouldFail(true)
-
-        // 通知送信がエラーになることを確認
-        do {
-            try await mockNotification.send(title: "Test", body: "Test")
-            XCTFail("エラーになるべきです")
-        } catch NotificationManagerError.addFailed {
-            // 期待通りのエラー
-            XCTAssertTrue(true)
-        } catch {
-            XCTFail("予期しないエラー: \(error)")
-        }
-    }
-
     // MARK: - スリープ復帰テスト
 
     func testWakeFromSleepTriggersCheck() async throws {
@@ -158,14 +107,5 @@ final class ResetNotifierTests: XCTestCase {
 
         let loadedState = try await mockPersistence.loadState()
         XCTAssertEqual(loadedState.lastKnownResetEpoch, loadedState.lastNotifiedResetEpoch)
-    }
-}
-
-// MARK: - Helper Extensions
-
-extension Date {
-    /// epoch秒を取得
-    var epochSeconds: Int {
-        return Int(self.timeIntervalSince1970)
     }
 }

@@ -9,76 +9,165 @@ import Foundation
 @testable import QuotaWatch
 
 /// テスト用のMock QuotaEngine（actor）
-actor MockQuotaEngine: QuotaEngineProtocol {
+///
+/// QuotaEngineProtocolに準拠し、テスト容易性を提供します。
+///
+/// ## Actorプロトコルメソッドのsync/async挙動について
+///
+/// Swift 6では、Actorに準拠するプロトコルのメソッドは、
+/// プロトコル側で`async`が指定されていない場合でも、
+/// actor隔離により呼び出し時に`await`が必要になります。
+///
+/// 例えば、QuotaEngineProtocolで以下のように定義されているメソッド:
+/// ```swift
+/// func getCurrentSnapshot() -> UsageSnapshot?
+/// func getState() -> AppState
+/// ```
+///
+/// これらは非同期メソッドとして定義されていませんが、
+/// actor準拠のため呼び出し時には`await`が必要です:
+/// ```swift
+/// let snapshot = await mockEngine.getCurrentSnapshot()
+/// let state = await mockEngine.getState()
+/// ```
+///
+/// この挙動はSwift 6の同時実行性モデルによるもので、
+/// actorのデータ保護を保証するために設計されています。
+///
+/// ## テストヘルパー
+///
+/// テスト容易性のため、以下のヘルパーメソッドを提供します:
+/// - `setSnapshot(_:)` - スナップショットを設定し、イベントを送信
+/// - `yieldEvent(_:)` - 任意のイベントを送信
+/// - `setForceFetchError(_:)` - forceFetch時のエラーを設定
+/// - `updateMockState(...)` - モック状態を更新
+public actor MockQuotaEngine: QuotaEngineProtocol {
     // MARK: - テスト状態
 
     /// 返却するスナップショット
-    var mockSnapshot: UsageSnapshot?
+    public private(set) var mockSnapshot: UsageSnapshot?
 
     /// 返却するアプリ状態
-    var mockAppState: AppState
+    public private(set) var mockAppState: AppState
 
     /// forceFetchが呼ばれた回数
-    var forceFetchCallCount = 0
+    public private(set) var forceFetchCallCount = 0
 
     /// forceFetchで投げるべきエラー（nilなら成功）
-    var forceFetchError: Error?
+    public private(set) var forceFetchError: Error?
 
     /// runLoopが開始されたか
-    var isRunLoopStarted = false
+    public private(set) var isRunLoopStarted = false
+
+    /// runLoopが停止されたか
+    public private(set) var isRunLoopStopped = false
+
+    /// 基本フェッチ間隔
+    public private(set) var baseInterval: TimeInterval = 60.0
+
+    /// イベントストリーム
+    private let eventStream: AsyncStream<QuotaEngineEvent>
+
+    /// イベントストリームの継続
+    public private(set) var eventContinuation: AsyncStream<QuotaEngineEvent>.Continuation?
+
+    /// デバッグログ内容
+    public private(set) var debugLogContents: String = ""
 
     // MARK: - 初期化
 
-    init(
+    public init(
         mockSnapshot: UsageSnapshot? = nil,
         mockAppState: AppState = AppState()
     ) {
         self.mockSnapshot = mockSnapshot
         self.mockAppState = mockAppState
+
+        // AsyncStreamを作成
+        var stream: AsyncStream<QuotaEngineEvent>?
+        var cont: AsyncStream<QuotaEngineEvent>.Continuation?
+        stream = AsyncStream<QuotaEngineEvent> { continuation in
+            cont = continuation
+        }
+        self.eventStream = stream!
+        self.eventContinuation = cont
     }
 
     // MARK: - QuotaEngineProtocol準拠
 
-    func getCurrentSnapshot() async -> UsageSnapshot? {
+    public func getCurrentSnapshot() -> UsageSnapshot? {
         return mockSnapshot
     }
 
-    func getState() async -> AppState {
+    public func getEventStream() -> AsyncStream<QuotaEngineEvent> {
+        return eventStream
+    }
+
+    public func getState() -> AppState {
         return mockAppState
     }
 
-    func forceFetch() async throws -> UsageSnapshot {
+    public func getNextFetchEpoch() -> Int {
+        return mockAppState.nextFetchEpoch
+    }
+
+    public func shouldFetch() -> Bool {
+        let now = Date().epochSeconds
+        return now >= mockAppState.nextFetchEpoch
+    }
+
+    public func fetchIfDue() async throws -> UsageSnapshot {
+        if shouldFetch() {
+            return try await performFetch()
+        }
+        guard let snapshot = mockSnapshot else {
+            throw QuotaEngineError.noCachedData
+        }
+        return snapshot
+    }
+
+    public func forceFetch() async throws -> UsageSnapshot {
         forceFetchCallCount += 1
         if let error = forceFetchError {
             throw error
         }
-        return mockSnapshot ?? createMockSnapshot()
+        return try await performFetch()
     }
 
-    func startRunLoop() async {
+    public func setBaseInterval(_ interval: TimeInterval) {
+        self.baseInterval = interval
+    }
+
+    public func startRunLoop() {
         isRunLoopStarted = true
     }
 
-    // MARK: - ヘルパー
-
-    /// モック用スナップショットを作成
-    private func createMockSnapshot() -> UsageSnapshot {
-        return UsageSnapshot(
-            providerId: "mock",
-            fetchedAtEpoch: Date().epochSeconds,
-            primaryTitle: "Test Quota",
-            primaryPct: 50,
-            primaryUsed: 500.0,
-            primaryTotal: 1000.0,
-            primaryRemaining: 500.0,
-            resetEpoch: Date().epochSeconds + 3600,
-            secondary: [],
-            rawDebugJson: nil
-        )
+    public func stopRunLoop() async {
+        isRunLoopStopped = true
     }
 
+    public func handleWakeFromSleep() async {
+        // モックでは何もしない
+    }
+
+    #if DEBUG
+    public func overrideNextFetchEpoch(_ epoch: Int) {
+        mockAppState.nextFetchEpoch = epoch
+    }
+
+    public func getDebugLogContents() async -> String {
+        return debugLogContents
+    }
+
+    public func clearDebugLog() async {
+        debugLogContents = ""
+    }
+    #endif
+
+    // MARK: - ヘルパー
+
     /// モック状態を更新
-    func updateMockState(
+    public func updateMockState(
         nextFetchEpoch: Int? = nil,
         backoffFactor: Int? = nil,
         lastFetchEpoch: Int? = nil,
@@ -107,14 +196,32 @@ actor MockQuotaEngine: QuotaEngineProtocol {
         }
         mockAppState.lastError = lastError
     }
-}
 
-// MARK: - QuotaEngineProtocol
+    /// スナップショットを設定し、イベントを送信
+    public func setSnapshot(_ snapshot: UsageSnapshot) {
+        self.mockSnapshot = snapshot
+        eventContinuation?.yield(.snapshotUpdated(snapshot))
+    }
 
-/// QuotaEngineのプロトコル（テスト用）
-protocol QuotaEngineProtocol {
-    func getCurrentSnapshot() async -> UsageSnapshot?
-    func getState() async -> AppState
-    func forceFetch() async throws -> UsageSnapshot
-    func startRunLoop() async
+    /// イベントを送信
+    public func yieldEvent(_ event: QuotaEngineEvent) {
+        eventContinuation?.yield(event)
+    }
+
+    /// forceFetchで投げるべきエラーを設定（テストヘルパー）
+    public func setForceFetchError(_ error: Error?) {
+        self.forceFetchError = error
+    }
+
+    /// フェッチを実行（内部ヘルパー）
+    private func performFetch() async throws -> UsageSnapshot {
+        if let error = forceFetchError {
+            throw error
+        }
+        eventContinuation?.yield(.fetchSucceeded)
+        guard let snapshot = mockSnapshot else {
+            throw QuotaEngineError.noCachedData
+        }
+        return snapshot
+    }
 }

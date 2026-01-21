@@ -70,7 +70,7 @@ public final class ContentViewModel: ObservableObject {
     // MARK: - 依存関係
 
     /// QuotaEngine（actor）
-    private let engine: QuotaEngine
+    private let engine: any QuotaEngineProtocol
 
     /// Provider（Z.ai等）
     private let provider: Provider
@@ -116,7 +116,7 @@ public final class ContentViewModel: ObservableObject {
     /// - Parameters:
     ///   - engine: QuotaEngine
     ///   - provider: Provider（Z.ai等）
-    public init(engine: QuotaEngine, provider: Provider) {
+    public init(engine: any QuotaEngineProtocol, provider: Provider) {
         self.engine = engine
         self.provider = provider
         self.appSettings = AppSettings()
