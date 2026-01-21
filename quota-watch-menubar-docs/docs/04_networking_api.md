@@ -12,7 +12,7 @@
 ## Request
 - Method: GET
 - Headers:
-  - `Authorization: <API_KEY>`
+  - `Authorization: Bearer <API_KEY>`
   - `Accept: application/json`
 
 ## Response取り扱い
@@ -27,5 +27,4 @@
 - `URLSessionConfiguration.timeoutIntervalForRequest = 10`
 
 ## 実装注意
-- Authorizationヘッダ値の形式は、SwiftBar実装に合わせ **ベアトークン**（`Authorization: ${API_KEY}`）を採用
-  - 将来 `Bearer` が必要になった場合は Provider側で吸収（MVPでは固定）
+- Authorizationヘッダ値の形式は **Bearerトークン**（`Authorization: Bearer ${API_KEY}`）

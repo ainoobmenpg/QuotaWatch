@@ -46,7 +46,7 @@ public struct ZaiProvider: Provider {
         var request = URLRequest(url: url)
         request.timeoutInterval = Self.timeout
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue(apiKey, forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
 
         Self.logger.debug("フェッチ開始: \(url)")
 
