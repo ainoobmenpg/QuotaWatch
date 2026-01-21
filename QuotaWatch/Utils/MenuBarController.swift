@@ -125,7 +125,6 @@ final class MenuBarController: ObservableObject {
             // データがない場合はテキストを表示
             button.title = viewModel?.menuBarTitle ?? "..."
             button.image = nil
-            button.sizeToFit()
             return
         }
 
