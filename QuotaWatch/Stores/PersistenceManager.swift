@@ -178,7 +178,10 @@ public actor PersistenceManager {
 
     // MARK: - Atomic Write
 
-    /// Atomic write: 一時ファイルに書き込み → renameで置き換え
+    /// Atomic write: 一時ファイルに書き込み → replaceItemでアトミックに置き換え
+    ///
+    /// FileManager.replaceItemを使用することで、削除と置き換えを1つのアトミック操作として実行します。
+    /// プロセス終了時のデータ破損リスクを回避できます。
     private func atomicWrite<T: Encodable>(data: T, to fileURL: URL) throws {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
@@ -187,11 +190,15 @@ public actor PersistenceManager {
         let tempURL = fileURL.appendingPathExtension("tmp")
         try jsonData.write(to: tempURL)
 
-        // 既存ファイルがあれば削除してからrename
-        if FileManager.default.fileExists(atPath: fileURL.path) {
-            try FileManager.default.removeItem(at: fileURL)
-        }
+        // replaceItemでアトミックに置き換え（削除と移動を1操作で実行）
+        _ = try FileManager.default.replaceItem(
+            at: fileURL,
+            withItemAt: tempURL,
+            backupItemName: nil,
+            options: [],
+            resultingItemURL: nil
+        )
 
-        try FileManager.default.moveItem(at: tempURL, to: fileURL)
+        // replaceItem成功時、一時ファイルは自動的に削除される
     }
 }

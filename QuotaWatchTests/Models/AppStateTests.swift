@@ -28,11 +28,6 @@ final class AppStateTests: XCTestCase {
         encoder.outputFormatting = .prettyPrinted
         let data = try encoder.encode(state)
 
-        // JSON構造を確認
-        if let jsonString = String(data: data, encoding: .utf8) {
-            print("Encoded AppState: \(jsonString)")
-        }
-
         let decoder = JSONDecoder()
         let decoded = try decoder.decode(AppState.self, from: data)
 
