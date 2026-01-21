@@ -289,19 +289,16 @@ final class EdgeCaseIntegrationTests: XCTestCase {
 
         // APIキーを設定しない
 
-        let engine = try await QuotaEngine(
-            provider: provider,
-            persistence: persistence,
-            keychain: keychain
-        )
-
-        // フェッチを実行（エラーになる）
+        // QuotaEngine初期化時にエラーがスローされることを検証
         do {
-            _ = try await engine.forceFetch()
+            _ = try await QuotaEngine(
+                provider: provider,
+                persistence: persistence,
+                keychain: keychain
+            )
             XCTFail("エラーがスローされるべき")
-        } catch QuotaEngineError.fatalError(let message) {
-            // KeychainアクセスエラーはfatalErrorとしてスローされる
-            XCTAssertTrue(message.contains("Keychain"), "Keychain関連のエラーメッセージを含むべき")
+        } catch QuotaEngineError.apiKeyNotSet {
+            // 期待通り: APIキー未設定エラー
         } catch {
             XCTFail("予期しないエラー: \(error)")
         }
