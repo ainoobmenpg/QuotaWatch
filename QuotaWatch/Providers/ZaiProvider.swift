@@ -73,8 +73,40 @@ public struct ZaiProvider: Provider {
             // JSONデコード
             let quotaResponse = try JSONDecoder().decode(QuotaResponse.self, from: data)
 
-            // トップレベルコードチェック（code: 0が成功）
-            if quotaResponse.code != 0 {
+            // 成功判定: codeが0または200の場合は成功
+            // 注: api_sample.jsonではcode:0だが、実際のAPIはcode:200を返す
+            if quotaResponse.code == 0 || quotaResponse.code == 200 {
+                // 成功パス
+
+                // errorオブジェクトがある場合はエラー（code:0/200でもerrorがあれば失敗）
+                if let error = quotaResponse.error {
+                    Self.logger.error("業務エラー（errorオブジェクトあり）: code=\(error.code ?? 0)")
+                    if let code = error.code, Self.rateLimitErrorCodes.contains(code) {
+                        throw ProviderError.httpError(statusCode: 429)
+                    }
+                    throw ProviderError.unauthorized
+                }
+
+                guard let quotaData = quotaResponse.data else {
+                    Self.logger.error("レスポンスデータがない")
+                    throw ProviderError.quotaNotAvailable
+                }
+
+                // デバッグ: 受信したlimitsのタイプをログ出力
+                let limitTypes = quotaData.limits.map { $0.type }
+                Self.logger.debug("受信したクォータタイプ: \(limitTypes)")
+
+                // UsageSnapshotへ正規化
+                guard let snapshot = UsageSnapshot(from: quotaData) else {
+                    Self.logger.error("プライマリクォータが見つからない。受信したタイプ: \(limitTypes)")
+                    throw ProviderError.quotaNotAvailable
+                }
+
+                Self.logger.log("フェッチ成功: \(snapshot.primaryTitle)")
+                return snapshot
+
+            } else {
+                // codeが0/200以外はエラー
                 Self.logger.error("APIエラー: code=\(quotaResponse.code)")
 
                 // errorオブジェクトがある場合はその情報を使用
@@ -91,34 +123,6 @@ public struct ZaiProvider: Provider {
                 }
                 throw ProviderError.unauthorized
             }
-
-            // 互換性のため: code:0だがerrorオブジェクトのみ存在するエッジケースに対応
-            // （code != 0 のケースは上記で処理済みのため、ここでは code:0 のみ処理）
-            if let error = quotaResponse.error {
-                Self.logger.error("業務エラー: code=\(error.code ?? 0)")
-                if let code = error.code, Self.rateLimitErrorCodes.contains(code) {
-                    throw ProviderError.httpError(statusCode: 429)
-                }
-                throw ProviderError.unauthorized
-            }
-
-            guard let quotaData = quotaResponse.data else {
-                Self.logger.error("レスポンスデータがない")
-                throw ProviderError.quotaNotAvailable
-            }
-
-            // デバッグ: 受信したlimitsのタイプをログ出力
-            let limitTypes = quotaData.limits.map { $0.type }
-            Self.logger.debug("受信したクォータタイプ: \(limitTypes)")
-
-            // UsageSnapshotへ正規化
-            guard let snapshot = UsageSnapshot(from: quotaData) else {
-                Self.logger.error("プライマリクォータが見つからない。受信したタイプ: \(limitTypes)")
-                throw ProviderError.quotaNotAvailable
-            }
-
-            Self.logger.log("フェッチ成功: \(snapshot.primaryTitle)")
-            return snapshot
 
         } catch let error as ProviderError {
             throw error
