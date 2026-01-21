@@ -73,7 +73,27 @@ public struct ZaiProvider: Provider {
             // JSONデコード
             let quotaResponse = try JSONDecoder().decode(QuotaResponse.self, from: data)
 
-            // 業務エラーチェック
+            // トップレベルコードチェック（code: 0が成功）
+            if quotaResponse.code != 0 {
+                Self.logger.error("APIエラー: code=\(quotaResponse.code)")
+
+                // errorオブジェクトがある場合はその情報を使用
+                if let error = quotaResponse.error {
+                    if let code = error.code, Self.rateLimitErrorCodes.contains(code) {
+                        throw ProviderError.httpError(statusCode: 429)
+                    }
+                    throw ProviderError.unauthorized
+                }
+
+                // errorオブジェクトがない場合はcodeに応じたエラー
+                if Self.rateLimitErrorCodes.contains(quotaResponse.code) {
+                    throw ProviderError.httpError(statusCode: 429)
+                }
+                throw ProviderError.unauthorized
+            }
+
+            // 互換性のため: code:0だがerrorオブジェクトのみ存在するエッジケースに対応
+            // （code != 0 のケースは上記で処理済みのため、ここでは code:0 のみ処理）
             if let error = quotaResponse.error {
                 Self.logger.error("業務エラー: code=\(error.code ?? 0)")
                 if let code = error.code, Self.rateLimitErrorCodes.contains(code) {
