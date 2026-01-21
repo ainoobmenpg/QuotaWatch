@@ -432,6 +432,14 @@ public actor QuotaEngine {
             self.state.consecutiveFailureCount = 0
         }
 
+        // バックオフ状態をリセット（復旧時は常にクリーン状態から開始する）
+        if self.state.backoffFactor > 1 {
+            logger.log("復旧時: バックオフ状態をリセットします (factor=\(self.state.backoffFactor) -> 1)")
+            await loggerManager.log("復旧時: バックオフ状態をリセット (factor=\(self.state.backoffFactor) -> 1)", category: "ENGINE")
+            self.state.backoffFactor = 1
+            self.state.lastError = ""
+        }
+
         // 状態を保存
         try? await persistence.saveState(self.state)
 
@@ -596,6 +604,15 @@ public actor QuotaEngine {
     public func handleWakeFromSleep() async {
         logger.log("スリープから復帰しました - QuotaEngine")
         await loggerManager.log("スリープから復帰しました - QuotaEngine", category: "ENGINE")
+
+        // スリープ復帰時にバックオフ状態をリセット
+        if self.state.backoffFactor > 1 {
+            logger.log("スリープ復帰時: バックオフ状態をリセットします (factor=\(self.state.backoffFactor) -> 1)")
+            await loggerManager.log("スリープ復帰時: バックオフ状態をリセット (factor=\(self.state.backoffFactor) -> 1)", category: "ENGINE")
+            self.state.backoffFactor = 1
+            self.state.lastError = ""
+            try? await persistence.saveState(self.state)
+        }
 
         let now = Date().epochSeconds
         if now >= state.nextFetchEpoch {
