@@ -25,7 +25,7 @@ struct QuotaGauge: View {
     }
 
     var body: some View {
-        Gauge(value: Double(percentage), in: 0...100) {
+        Gauge(value: Double(remainingPercentage), in: 0...100) {
             EmptyView()
         } currentValueLabel: {
             EmptyView()
