@@ -112,34 +112,18 @@ public final class ContentViewModel: ObservableObject {
     // MARK: - 初期化
 
     /// ContentViewModelを初期化
-    ///
-    /// - Parameters:
-    ///   - engine: QuotaEngine
-    ///   - provider: Provider（Z.ai等）
     public init(engine: any QuotaEngineProtocol, provider: Provider) {
         self.engine = engine
         self.provider = provider
         self.appSettings = AppSettings()
-
-        Task {
-            await loggerManager.log("ContentViewModel初期化完了", category: "UI")
-        }
     }
 
     /// 初期データを非同期で読み込み
-    ///
-    /// 初期化完了を待ちたい場合は、このメソッドを呼び出してください。
     public func loadInitialData() async {
-        // AppSettingsのupdateIntervalをEngineに反映
         await engine.setBaseInterval(TimeInterval(appSettings.updateInterval.rawValue))
-
         await updateState()
-        // AsyncStream監視を開始
         startObservingEngine()
-
-        // 初期ロード完了
         isLoadingInitialData = false
-        await loggerManager.log("初期データロード完了", category: "UI")
     }
 
     // MARK: - 状態同期
@@ -173,58 +157,31 @@ public final class ContentViewModel: ObservableObject {
 
     /// メニューバータイトルを更新
     private func updateMenuBarTitle() {
-        // 初期ロード中は「...」を表示
         if isLoadingInitialData {
             menuBarTitle = "..."
-            Task {
-                await loggerManager.log("メニューバータイトル更新: ...（初期ロード中）", category: "UI")
-            }
             return
         }
 
         guard let snapshot = snapshot else {
             menuBarTitle = "N/A"
-            Task {
-                await loggerManager.log("メニューバータイトル更新: N/A", category: "UI")
-            }
             return
         }
 
-        // "GLM 5h 42% • 2h36m" 形式
         var title = snapshot.primaryTitle
-
         if let pct = snapshot.primaryPct {
             title += " \(pct)%"
         }
-
         if let resetEpoch = snapshot.resetEpoch {
-            let remaining = TimeFormatter.formatTimeRemaining(resetEpoch: resetEpoch)
-            title += " • \(remaining)"
+            title += " • \(TimeFormatter.formatTimeRemaining(resetEpoch: resetEpoch))"
         }
-
         menuBarTitle = title
-
-        Task {
-            await loggerManager.log("メニューバータイトル更新: \(title)", category: "UI")
-        }
     }
 
     // MARK: - ストリーム監視
 
     /// エンジンのAsyncStream監視を開始
     private func startObservingEngine() {
-        // 既に監視中の場合は何もしない
-        guard streamObservationTask == nil else {
-            Task {
-                await loggerManager.log("AsyncStream監視は既に開始されています", category: "UI")
-            }
-            return
-        }
-
-        Task {
-            await loggerManager.log("AsyncStream監視を開始します", category: "UI")
-        }
-
+        guard streamObservationTask == nil else { return }
         streamObservationTask = Task {
             for await event in await engine.getEventStream() {
                 await handleEvent(event)
@@ -234,43 +191,19 @@ public final class ContentViewModel: ObservableObject {
 
     /// エンジンイベントをハンドル
     private func handleEvent(_ event: QuotaEngineEvent) async {
-        await loggerManager.log("イベント受信: \(eventTypeString(event))", category: "UI")
-
         switch event {
         case .snapshotUpdated(let snapshot):
             self.snapshot = snapshot
             updateMenuBarTitle()
-            await loggerManager.log("スナップショット更新: \(snapshot.primaryTitle)", category: "UI")
-
         case .fetchStarted:
             isFetching = true
-            await loggerManager.log("フェッチ状態更新: true", category: "UI")
-
         case .fetchSucceeded:
             isFetching = false
             authorizationError = false
-            await loggerManager.log("フェッチ成功", category: "UI")
-
         case .fetchFailed(let error):
             isFetching = false
             errorMessage = error
-            // 認証エラーを判定
             updateAuthorizationError(error)
-            await loggerManager.log("フェッチ失敗: \(error)", category: "UI")
-        }
-    }
-
-    /// イベントタイプの文字列表現を取得
-    private func eventTypeString(_ event: QuotaEngineEvent) -> String {
-        switch event {
-        case .snapshotUpdated:
-            return "snapshotUpdated"
-        case .fetchStarted:
-            return "fetchStarted"
-        case .fetchSucceeded:
-            return "fetchSucceeded"
-        case .fetchFailed:
-            return "fetchFailed"
         }
     }
 
@@ -285,14 +218,10 @@ public final class ContentViewModel: ObservableObject {
         do {
             _ = try await engine.forceFetch()
             await updateState()
-            await loggerManager.log("強制フェッチ成功", category: "UI")
         } catch {
-            await loggerManager.log("強制フェッチエラー: \(error.localizedDescription)", category: "UI")
             errorMessage = error.localizedDescription
-            // 認証エラーを判定
             updateAuthorizationError(error.localizedDescription)
         }
-
         isFetching = false
     }
 
@@ -310,9 +239,7 @@ public final class ContentViewModel: ObservableObject {
                 title: "QuotaWatch テスト通知",
                 body: "これはテスト通知です。通知設定が正常に動作しています。"
             )
-            await loggerManager.log("テスト通知を送信しました", category: "UI")
         } catch {
-            await loggerManager.log("テスト通知エラー: \(error.localizedDescription)", category: "UI")
             errorMessage = "通知の送信に失敗しました: \(error.localizedDescription)"
         }
     }
@@ -321,73 +248,41 @@ public final class ContentViewModel: ObservableObject {
 
     /// ダッシュボードを開く
     public func openDashboard() async {
-        guard let dashboardURL = provider.dashboardURL else {
-            await loggerManager.log("ダッシュボードURLが設定されていません", category: "UI")
-            return
+        if let url = provider.dashboardURL {
+            NSWorkspace.shared.open(url)
         }
-
-        NSWorkspace.shared.open(dashboardURL)
-        await loggerManager.log("ダッシュボードを開きました: \(dashboardURL)", category: "UI")
     }
 
     // MARK: - 設定管理
 
     /// 更新間隔を設定
-    ///
-    /// - Parameter interval: 更新間隔
     public func setUpdateInterval(_ interval: UpdateInterval) async {
-        await loggerManager.log("更新間隔を変更: \(interval.displayName)", category: "UI")
         await engine.setBaseInterval(TimeInterval(interval.rawValue))
     }
 
     /// 通知有効/無効を設定
-    ///
-    /// - Parameter enabled: 有効にする場合はtrue
     public func setNotificationsEnabled(_ enabled: Bool) async {
-        await loggerManager.log("通知設定を変更: \(enabled ? "有効" : "無効")", category: "UI")
-
         if enabled {
-            // 権限がまだない場合は要求
             let status = await NotificationManager.shared.getAuthorizationStatus()
             if status != .authorized {
-                do {
-                    _ = try await NotificationManager.shared.requestAuthorization()
-                } catch {
-                    await loggerManager.log("通知権限の取得に失敗: \(error.localizedDescription)", category: "UI")
-                    errorMessage = "通知権限の取得に失敗しました"
-                }
+                try? await NotificationManager.shared.requestAuthorization()
             }
         }
     }
 
     /// Login Item有効/無効を設定
-    ///
-    /// - Parameter enabled: 有効にする場合はtrue
     public func setLoginItemEnabled(_ enabled: Bool) async {
-        // AppSettingsを直接更新（didSetでupdateLoginItemStatusが呼ばれる）
         appSettings.loginItemEnabled = enabled
-        await loggerManager.log("Login Item設定を変更: \(enabled ? "有効" : "無効")", category: "UI")
     }
 
     // MARK: - ユーティリティ
 
-    /// Provider表示名
-    var providerDisplayName: String {
-        return provider.displayName
-    }
-
-    /// ダッシュボードURL
-    var dashboardURL: URL? {
-        return provider.dashboardURL
-    }
-
-    // MARK: - ログエクスポート
+    var providerDisplayName: String { provider.displayName }
+    var dashboardURL: URL? { provider.dashboardURL }
 
     /// デバッグログをDesktopにエクスポート
-    ///
-    /// - Returns: エクスポート成功時はファイルパス、失敗時はnil
     public func exportDebugLog() async -> URL? {
-        return await loggerManager.exportToDesktop()
+        await loggerManager.exportToDesktop()
     }
 }
 
