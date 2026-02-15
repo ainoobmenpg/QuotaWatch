@@ -37,6 +37,36 @@ final class MenuBarController: ObservableObject {
     /// 5時間を秒数で表現
     private let fiveHoursInSeconds: Double = 5 * 60 * 60
 
+    // MARK: - アニメーション関連
+
+    /// アニメーションの継続時間（秒）
+    private let animationDuration: Double = 0.3
+
+    /// フレーム間隔（秒）60fps
+    private let frameInterval: Double = 1.0 / 60.0
+
+    /// 現在の使用率（アニメーション用）
+    private var currentUsagePercentage: Int?
+
+    /// 目標の使用率（アニメーション用）
+    private var targetUsagePercentage: Int?
+
+    /// 現在の時間進捗（アニメーション用）
+    private var currentTimeProgress: Double?
+
+    /// 目標の時間進捗（アニメーション用）
+    private var targetTimeProgress: Double?
+
+    /// アニメーション開始時刻
+    private var animationStartTime: Date?
+
+    /// アニメーション開始時の値
+    private var animationStartUsage: Int?
+    private var animationStartTimeProgress: Double?
+
+    /// アニメーションタイマー
+    private var animationTimer: Timer?
+
     // MARK: - 初期化
 
     /// MenuBarControllerを初期化
@@ -57,7 +87,7 @@ final class MenuBarController: ObservableObject {
         self.hostingController = NSHostingController(rootView: popupView)
 
         // 初期表示を即座に設定
-        updateMenuBarIcon()
+        startIconAnimation()
 
         // 監視を設定（prepend なし）
         setupObservation()
@@ -76,7 +106,7 @@ final class MenuBarController: ObservableObject {
         viewModel.$snapshot
             .receive(on: RunLoop.main)
             .sink { [weak self] (_: UsageSnapshot?) in
-                self?.updateMenuBarIcon()
+                self?.startIconAnimation()
             }
             .store(in: &cancellables)
     }
@@ -114,57 +144,149 @@ final class MenuBarController: ObservableObject {
 
     // MARK: - 更新
 
-    /// メニューバーアイコンを更新
-    private func updateMenuBarIcon() {
-        guard let button = statusItem.button else { return }
-
-        // snapshotからデータを取得
+    /// アイコンアニメーションを開始
+    private func startIconAnimation() {
+        // snapshotから目標値を取得
         guard let snapshot = viewModel?.snapshot,
               let pct = snapshot.primaryPct,
               let resetEpoch = snapshot.resetEpoch else {
+            // データがない場合は即座に更新
+            updateMenuBarIconDirectly(usagePercentage: nil, timeProgress: nil)
+            return
+        }
+
+        // 残り時間の進捗度を計算（5時間枠）
+        let now = Int(Date().timeIntervalSince1970)
+        let calculatedTimeProgress: Double
+        if resetEpoch > now {
+            // 未リセット：進捗を計算
+            let periodStart = resetEpoch - Int(fiveHoursInSeconds)
+            let elapsed = max(0, Double(now - periodStart))
+            calculatedTimeProgress = min(elapsed / fiveHoursInSeconds, 1.0)
+        } else {
+            // リセット済み：進捗0%
+            calculatedTimeProgress = 0.0
+        }
+
+        // 目標値を設定
+        targetUsagePercentage = pct
+        targetTimeProgress = calculatedTimeProgress
+
+        // 初回または値が大きく変化した場合のみアニメーション開始
+        let shouldAnimate: Bool
+        if let current = currentUsagePercentage, let currentTime = currentTimeProgress, let targetTime = targetTimeProgress {
+            // 変化量が小さい場合はアニメーションしない（1%未満または時間進捗が0.01未満）
+            let usageDelta = abs(Double(current - pct))
+            let timeDelta = abs(currentTime - targetTime)
+            shouldAnimate = usageDelta >= 1.0 || timeDelta >= 0.01
+        } else {
+            // 初回はアニメーションなしで即時表示
+            shouldAnimate = false
+        }
+
+        if shouldAnimate {
+            // アニメーション開始
+            animationStartTime = Date()
+            animationStartUsage = currentUsagePercentage
+            animationStartTimeProgress = currentTimeProgress
+
+            // 既存のタイマーをキャンセル
+            animationTimer?.invalidate()
+
+            // タイマーを開始
+            animationTimer = Timer.scheduledTimer(withTimeInterval: frameInterval, repeats: true) { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.updateAnimationFrame()
+                }
+            }
+        } else {
+            // 即時更新
+            currentUsagePercentage = pct
+            currentTimeProgress = targetTimeProgress
+            updateMenuBarIconDirectly(usagePercentage: pct, timeProgress: targetTimeProgress)
+        }
+    }
+
+    /// アニメーションフレームを更新
+    private func updateAnimationFrame() {
+        guard let startTime = animationStartTime,
+              let startUsage = animationStartUsage,
+              let startTimeProgress = animationStartTimeProgress,
+              let targetUsage = targetUsagePercentage,
+              let targetTime = targetTimeProgress else {
+            animationTimer?.invalidate()
+            animationTimer = nil
+            return
+        }
+
+        let elapsed = Date().timeIntervalSince(startTime)
+        let progress = min(elapsed / animationDuration, 1.0)
+
+        // easeInOutカーブを適用
+        let easedProgress = easeInOut(progress)
+
+        // 値を補間
+        let currentUsage = Int(Double(startUsage) + (Double(targetUsage - startUsage) * easedProgress))
+        let currentTime = startTimeProgress + ((targetTime - startTimeProgress) * easedProgress)
+
+        currentUsagePercentage = currentUsage
+        currentTimeProgress = currentTime
+
+        updateMenuBarIconDirectly(usagePercentage: currentUsage, timeProgress: currentTime)
+
+        // アニメーション完了
+        if progress >= 1.0 {
+            animationTimer?.invalidate()
+            animationTimer = nil
+            animationStartTime = nil
+            animationStartUsage = nil
+            animationStartTimeProgress = nil
+        }
+    }
+
+    /// easeInOutカーブを計算
+    private func easeInOut(_ t: Double) -> Double {
+        return t < 0.5
+            ? 2 * t * t
+            : 1 - pow(-2 * t + 2, 2) / 2
+    }
+
+    /// メニューバーアイコンを直接更新（アニメーション用）
+    private func updateMenuBarIconDirectly(usagePercentage: Int?, timeProgress: Double?) {
+        guard let button = statusItem.button else { return }
+
+        guard let pct = usagePercentage, let timeProg = timeProgress else {
             // データがない場合はテキストを表示
             button.title = viewModel?.menuBarTitle ?? "..."
             button.image = nil
             return
         }
 
-        // 残り時間の進捗度を計算（5時間枠）
-        let now = Int(Date().timeIntervalSince1970)
-        let timeProgress: Double
-        if resetEpoch > now {
-            // 未リセット：進捗を計算
-            let periodStart = resetEpoch - Int(fiveHoursInSeconds)
-            let elapsed = max(0, Double(now - periodStart))
-            timeProgress = min(elapsed / fiveHoursInSeconds, 1.0)
-        } else {
-            // リセット済み：進捗0%
-            timeProgress = 0.0
-        }
-
-        // NSImage を直接生成
+        // NSImage を直接生成（案E: 22pt標準サイズ）
         let icon = MenuBarDonutIcon(
             usagePercentage: pct,
-            timeProgress: timeProgress,
-            diameter: 16
+            timeProgress: timeProg,
+            diameter: 22
         )
         let image = icon.makeImage()
 
         button.title = ""
         button.image = image
         button.image?.isTemplate = false
-
-        // ログ出力
-        Task { @MainActor in
-            await LoggerManager.shared.log(
-                "メニューバーアイコン更新: pct=\(pct)%, timeProgress=\(Int(timeProgress * 100))%",
-                category: "MENUBAR"
-            )
-        }
     }
 
     // MARK: - クリーンアップ
 
     deinit {
+        // タイマーの無効化（synchronizationなし）
+        // Note: deinitでは同期処理が制限されるため、非同期クリーンアップは行わない
+        // animationTimerは自動的に解放される
+    }
+
+    /// 明示的なクリーンアップメソッド（解放前に呼び出す推奨）
+    func cleanup() {
+        animationTimer?.invalidate()
+        animationTimer = nil
         NSStatusBar.system.removeStatusItem(statusItem)
     }
 }
