@@ -80,7 +80,7 @@ struct MenuBarDonutIcon {
             // 右側: テキスト（残り時間）
             Text(formatRemainingTime(remainingSeconds))
                 .font(.system(size: 12, weight: .medium, design: .monospaced))
-                .foregroundStyle(.primary)
+                .foregroundStyle(.white)
         }
         .frame(width: totalWidth, height: totalHeight)
 
