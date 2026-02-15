@@ -148,23 +148,23 @@ final class MenuBarController: ObservableObject {
     private func startIconAnimation() {
         // snapshotから目標値を取得
         guard let snapshot = viewModel?.snapshot,
-              let pct = snapshot.primaryPct,
-              let resetEpoch = snapshot.resetEpoch else {
+              let pct = snapshot.primaryPct else {
             // データがない場合は即座に更新
             updateMenuBarIconDirectly(usagePercentage: nil, timeProgress: nil)
             return
         }
 
         // 残り時間の進捗度を計算（5時間枠）
+        // resetEpoch が nil の場合は進捗0%として扱う（リセット直後など）
         let now = Int(Date().timeIntervalSince1970)
         let calculatedTimeProgress: Double
-        if resetEpoch > now {
+        if let resetEpoch = snapshot.resetEpoch, resetEpoch > now {
             // 未リセット：進捗を計算
             let periodStart = resetEpoch - Int(fiveHoursInSeconds)
             let elapsed = max(0, Double(now - periodStart))
             calculatedTimeProgress = min(elapsed / fiveHoursInSeconds, 1.0)
         } else {
-            // リセット済み：進捗0%
+            // リセット済みまたは resetEpoch が nil：進捗0%
             calculatedTimeProgress = 0.0
         }
 
