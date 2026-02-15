@@ -173,6 +173,7 @@ private struct UnifiedIconView: View {
                 .font(.system(size: fontSize, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .foregroundStyle(innerColor)
+                .frame(width: size * 0.55) // 固定幅で中央揃え
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)
         }
