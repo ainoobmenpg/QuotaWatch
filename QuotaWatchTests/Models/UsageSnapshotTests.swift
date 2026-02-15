@@ -280,14 +280,21 @@ final class UsageSnapshotTests: XCTestCase {
     }
 
     func testCalculatePercentageEdgeCases() {
-        // ゼロ除算の回避
-        XCTAssertEqual(calculatePercentage(percentage: nil, usage: 100, total: 0), 0)
+        // ゼロ除算の場合は nil（計算不可）
+        XCTAssertNil(calculatePercentage(percentage: nil, usage: 100, total: 0))
+        // usage が 0 の場合は 0%
         XCTAssertEqual(calculatePercentage(percentage: nil, usage: 0, total: 100), 0)
+        // 100% 使用の場合
         XCTAssertEqual(calculatePercentage(percentage: nil, usage: 100, total: 100), 100)
 
         // 小数点以下の切り捨て
         XCTAssertEqual(calculatePercentage(percentage: 99.9, usage: 0, total: 1), 99)
         XCTAssertEqual(calculatePercentage(percentage: nil, usage: 9999, total: 10000), 99)
+
+        // usage が nil の場合は nil（percentage もない場合）
+        XCTAssertNil(calculatePercentage(percentage: nil, usage: nil, total: 100))
+        // usage が nil でも percentage があればそれを使用
+        XCTAssertEqual(calculatePercentage(percentage: 42.5, usage: nil, total: 100), 42)
     }
 
     // MARK: - ErrorResponse Tests
