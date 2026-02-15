@@ -19,9 +19,8 @@ import OSLog
 /// Note: Actorプロトコルのため、メソッド自体は同期定義ですが、
 /// 外部から呼び出す際にはactor隔離によりawaitが必要です。
 ///
-/// Note: DEBUG用メソッドは#if DEBUGで条件付き定義されています。
-/// Swiftのactor宣言では条件コンパイルによるプロトコル切り替えができないため、
-/// 単一のプロトコル内でDEBUGメソッドを条件付きで定義しています。
+/// Note: DEBUG用メソッドは `QuotaEngineDebugProtocol` に分離されています。
+/// DEBUGビルドでは、拡張を通じて `QuotaEngineDebugProtocol` にも準拠します。
 public protocol QuotaEngineProtocol: Actor {
     /// 現在のスナップショットを取得
     func getCurrentSnapshot() -> UsageSnapshot?
@@ -55,8 +54,16 @@ public protocol QuotaEngineProtocol: Actor {
 
     /// スリープ復帰ハンドラ
     func handleWakeFromSleep() async
+}
 
-    #if DEBUG
+// MARK: - QuotaEngineDebugProtocol
+
+#if DEBUG
+/// QuotaEngineのDEBUG用プロトコル
+///
+/// DEBUGビルド時のみ使用できるテストヘルパーメソッドを定義します。
+/// このプロトコルはDEBUGビルドでのみ使用可能です。
+public protocol QuotaEngineDebugProtocol: Actor {
     /// 次回フェッチ時刻を強制的に設定（テスト用）
     func overrideNextFetchEpoch(_ epoch: Int)
 
@@ -65,8 +72,8 @@ public protocol QuotaEngineProtocol: Actor {
 
     /// ログクリア（テスト用）
     func clearDebugLog() async
-    #endif
 }
+#endif
 
 // MARK: - QuotaEngineError
 
@@ -713,3 +720,11 @@ public actor QuotaEngine: QuotaEngineProtocol {
     }
     #endif
 }
+
+// MARK: - QuotaEngineDebugProtocol準拠（DEBUGビルドのみ）
+
+#if DEBUG
+extension QuotaEngine: QuotaEngineDebugProtocol {
+    // DEBUGメソッドはactor本体で実装済み
+}
+#endif

@@ -7,11 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		00112233445566778899AABB /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00112233445566778899AABC /* NotificationService.swift */; };
+		00112233445566778899AACC /* DashboardService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00112233445566778899AADD /* DashboardService.swift */; };
+		01A2B3C4D5E6F7890ABCDEF03 /* QuotaColorCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01A2B3C4D5E6F7890ABCDEF04 /* QuotaColorCalculator.swift */; };
 		037C2EC36038748A007836E6 /* QuotaEngineRunLoopTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A477064C7DA7510D89D89717 /* QuotaEngineRunLoopTests.swift */; };
 		093E54E3C0A343E7B35AC0DE /* SecondaryQuotaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8D463EFDC164E6E8A3E8D48 /* SecondaryQuotaView.swift */; };
 		10059F50738148B98E3A8B91 /* HeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13020F9E19D446CD962EE97A /* HeaderView.swift */; };
 		174575AEECD4D9FFDBDA18EF /* AppConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3975009681D07503388A7700 /* AppConstants.swift */; };
 		17728FD1C102DD0FA087EB19 /* TimeFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 562BAE5AE690A4D7CE483938 /* TimeFormatter.swift */; };
+		18C4D6E8F9A0B1234C5D6E7A /* NumberFormatterUtil.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56C2A3D8E9F4A7B6C8D9E012 /* NumberFormatterUtil.swift */; };
 		20071470962310EFA91B7B87 /* ResetNotifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54272FFC187B1C069D65EB9E /* ResetNotifierTests.swift */; };
 		20C327694551A526DC696074 /* TimeFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98C9158286A96E0D12EF1C6D /* TimeFormatterTests.swift */; };
 		2A7873B7F1474DD6BD162EB6 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8E7C3FF5FA421EA04A464F /* OnboardingView.swift */; };
@@ -74,6 +78,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		00112233445566778899AABC /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		00112233445566778899AADD /* DashboardService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardService.swift; sourceTree = "<group>"; };
+		01A2B3C4D5E6F7890ABCDEF04 /* QuotaColorCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaColorCalculator.swift; sourceTree = "<group>"; };
 		03084E81161F967B5B48ED5E /* ZaiProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZaiProviderTests.swift; sourceTree = "<group>"; };
 		0B1681A9E15047A7A927D11A1637FACB /* APIKeySettingsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIKeySettingsSheet.swift; sourceTree = "<group>"; };
 		0D4508D7D30A4879896F5DEF /* ActionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionsView.swift; sourceTree = "<group>"; };
@@ -94,6 +101,7 @@
 		4F8E7C3FF5FA421EA04A464F /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		54272FFC187B1C069D65EB9E /* ResetNotifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResetNotifierTests.swift; sourceTree = "<group>"; };
 		562BAE5AE690A4D7CE483938 /* TimeFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeFormatter.swift; sourceTree = "<group>"; };
+		56C2A3D8E9F4A7B6C8D9E012 /* NumberFormatterUtil.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NumberFormatterUtil.swift; sourceTree = "<group>"; };
 		5859B5E242756C194F88349C /* ProviderError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderError.swift; sourceTree = "<group>"; };
 		5CE1D301D0A84ACF4002B3AE /* PersistenceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceManager.swift; sourceTree = "<group>"; };
 		5F2B18E2AABE4513981EDF0B /* Provider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Provider.swift; sourceTree = "<group>"; };
@@ -186,6 +194,8 @@
 				1A2B3C4D5E6F7890ABCDEF02 /* AppDelegate.swift */,
 				3975009681D07503388A7700 /* AppConstants.swift */,
 				C3B8D9E5F4A617289C4D5E63 /* ColorExtensions.swift */,
+				01A2B3C4D5E6F7890ABCDEF04 /* QuotaColorCalculator.swift */,
+				56C2A3D8E9F4A7B6C8D9E012 /* NumberFormatterUtil.swift */,
 				714AF4121F8B4680B9592EE2 /* QuotaGauge.swift */,
 				562BAE5AE690A4D7CE483938 /* TimeFormatter.swift */,
 				86AD3A993D554B4CB5E28B69 /* LoggerManager.swift */,
@@ -222,6 +232,15 @@
 				B064591AAE2355CCA319412F /* ResetNotifier.swift */,
 			);
 			path = Managers;
+			sourceTree = "<group>";
+		};
+		50A1B2C3D4E5F67890ABCDEF0 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				00112233445566778899AABC /* NotificationService.swift */,
+				00112233445566778899AADD /* DashboardService.swift */,
+			);
+			path = Services;
 			sourceTree = "<group>";
 		};
 		6AAFC47E2F1E277A00A022F2 /* Integration */ = {
@@ -272,6 +291,7 @@
 				500309C37ACC2C24661B3538 /* Managers */,
 				AA8BF28402509C84884AC113 /* Models */,
 				0600DAE6697D9092D3B51F7F /* Providers */,
+				50A1B2C3D4E5F67890ABCDEF0 /* Services */,
 				BA9CA4CC4448EED19B311E87 /* Stores */,
 				2709B3D7EF05695939321623 /* Utils */,
 				7E8D54280F5923FDEEAEDA30 /* ViewModels */,
@@ -447,6 +467,7 @@
 				E820B42A116A435481D3F308F1913065 /* APIKeySettingsSheet.swift in Sources */,
 				174575AEECD4D9FFDBDA18EF /* AppConstants.swift in Sources */,
 				B2A7E8F4C3D145A9E8F6D7A1 /* ColorExtensions.swift in Sources */,
+				01A2B3C4D5E6F7890ABCDEF03 /* QuotaColorCalculator.swift in Sources */,
 				F349A5EC8CAE5FD78063E38B /* AppState.swift in Sources */,
 				6C839FAA4328E0139ED459D2 /* BackoffDecision.swift in Sources */,
 				B730C1C7BB2D45DAA7C08072 /* ContentViewModel.swift in Sources */,
@@ -464,6 +485,7 @@
 				8ECACE80223F460DB8F9FE02 /* PrimaryQuotaView.swift in Sources */,
 				093E54E3C0A343E7B35AC0DE /* SecondaryQuotaView.swift in Sources */,
 				63D5620D540147B2B7952B28 /* ActionsView.swift in Sources */,
+				18C4D6E8F9A0B1234C5D6E7A /* NumberFormatterUtil.swift in Sources */,
 				A39D5D0F3A2740778CE0AD65 /* SettingsView.swift in Sources */,
 				B8323BA6EE748A7975845E13 /* ResetNotifier.swift in Sources */,
 				17728FD1C102DD0FA087EB19 /* TimeFormatter.swift in Sources */,

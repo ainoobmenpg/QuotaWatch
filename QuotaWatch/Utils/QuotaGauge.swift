@@ -31,7 +31,7 @@ struct QuotaGauge: View {
             EmptyView()
         }
         .gaugeStyle(.accessoryCircularCapacity)
-        .tint(Color.statusColor(for: remainingPercentage))
+        .tint(QuotaColorCalculator.color(for: remainingPercentage))
         .frame(width: size, height: size)
         .overlay {
             Text("\(remainingPercentage)%")
@@ -69,13 +69,7 @@ struct MenuBarDonutChart: View {
 
     /// 色の決定（残り率に応じて変化）
     private var chartColor: Color {
-        if remainingPercentage > AppConstants.quotaThresholdHealthy {
-            return AppConstants.Color.SwiftUIColor.healthy
-        } else if remainingPercentage > AppConstants.quotaThresholdWarning {
-            return AppConstants.Color.SwiftUIColor.warning
-        } else {
-            return AppConstants.Color.SwiftUIColor.critical
-        }
+        QuotaColorCalculator.color(for: remainingPercentage)
     }
 
     var body: some View {
@@ -122,13 +116,7 @@ struct MenuBarDoubleDonutChart: View {
 
     /// ステータス色（残り率ベース）
     private var statusColor: Color {
-        if remainingPercentage > AppConstants.quotaThresholdHealthy {
-            return AppConstants.Color.SwiftUIColor.healthy
-        } else if remainingPercentage > AppConstants.quotaThresholdWarning {
-            return AppConstants.Color.SwiftUIColor.warning
-        } else {
-            return AppConstants.Color.SwiftUIColor.critical
-        }
+        QuotaColorCalculator.color(for: remainingPercentage)
     }
 
     var body: some View {

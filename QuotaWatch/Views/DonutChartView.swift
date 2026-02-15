@@ -44,16 +44,7 @@ struct DonutChartView: View {
 
     /// 色の決定（残り率に応じて変化）
     private var chartColor: Color {
-        let ratio = remainingRatio
-        let thresholdHealthy = Double(AppConstants.quotaThresholdHealthy) / 100.0
-        let thresholdWarning = Double(AppConstants.quotaThresholdWarning) / 100.0
-        if ratio > thresholdHealthy {
-            return AppConstants.Color.SwiftUIColor.healthy
-        } else if ratio > thresholdWarning {
-            return AppConstants.Color.SwiftUIColor.warning
-        } else {
-            return AppConstants.Color.SwiftUIColor.critical
-        }
+        QuotaColorCalculator.color(for: remainingPercentage)
     }
 
     var body: some View {
@@ -122,16 +113,7 @@ struct MenuBarDonutChartView: View {
 
     /// 色の決定（残り率に応じて変化）
     private var chartColor: Color {
-        let ratio = remainingRatio
-        let thresholdHealthy = Double(AppConstants.quotaThresholdHealthy) / 100.0
-        let thresholdWarning = Double(AppConstants.quotaThresholdWarning) / 100.0
-        if ratio > thresholdHealthy {
-            return AppConstants.Color.SwiftUIColor.healthy
-        } else if ratio > thresholdWarning {
-            return AppConstants.Color.SwiftUIColor.warning
-        } else {
-            return AppConstants.Color.SwiftUIColor.critical
-        }
+        QuotaColorCalculator.color(for: remainingPercentage)
     }
 
     var body: some View {

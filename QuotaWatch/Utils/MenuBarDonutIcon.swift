@@ -20,14 +20,7 @@ struct MenuBarDonutIcon {
 
     /// ステータス色を取得（残り率ベース）
     private var statusColor: NSColor {
-        let remainingPercentage = 100 - usagePercentage
-        if remainingPercentage > AppConstants.quotaThresholdHealthy {
-            return AppConstants.Color.NSColor.healthy
-        } else if remainingPercentage > AppConstants.quotaThresholdWarning {
-            return AppConstants.Color.NSColor.warning
-        } else {
-            return AppConstants.Color.NSColor.critical
-        }
+        QuotaColorCalculator.nsColor(forUsage: usagePercentage)
     }
 
     /// NSImage を生成
