@@ -147,8 +147,8 @@ private struct UnifiedIconView: View {
     /// 内側ドーナツの太さ
     private var innerDonutWidth: CGFloat { size * 0.08 }
 
-    /// 数字のフォントサイズ（案1: 大きくして見やすく）
-    private var fontSize: CGFloat { size * 0.45 }
+    /// 数字のフォントサイズ（余裕を持たせて視認性向上）
+    private var fontSize: CGFloat { size * 0.38 }
 
     var body: some View {
         ZStack {
