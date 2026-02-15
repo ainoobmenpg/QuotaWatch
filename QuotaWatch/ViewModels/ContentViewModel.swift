@@ -265,6 +265,7 @@ public final class ContentViewModel: ObservableObject {
         if enabled {
             let status = await NotificationManager.shared.getAuthorizationStatus()
             if status != .authorized {
+                // 権限要求の失敗は致命的ではないため、エラーは無視する
                 try? await NotificationManager.shared.requestAuthorization()
             }
         }
