@@ -262,10 +262,20 @@ final class MenuBarController: ObservableObject {
             return
         }
 
-        // NSImage を直接生成（案E: 22pt標準サイズ）
+        // 残り秒数を計算
+        let remainingSeconds: Int
+        if let resetEpoch = viewModel?.snapshot?.resetEpoch {
+            let now = Int(Date().timeIntervalSince1970)
+            remainingSeconds = max(0, resetEpoch - now)
+        } else {
+            remainingSeconds = 0
+        }
+
+        // NSImage を直接生成（Phase 6: 2つ並び）
         let icon = MenuBarDonutIcon(
             usagePercentage: pct,
             timeProgress: timeProg,
+            remainingSeconds: remainingSeconds,
             diameter: 22
         )
         let image = icon.makeImage()
