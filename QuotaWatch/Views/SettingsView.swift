@@ -41,6 +41,7 @@ struct CustomSwitchToggleStyle: ToggleStyle {
 /// 設定ビュー
 ///
 /// 更新間隔、通知ON/OFF、Login Itemの設定を表示します。
+/// 設定はDisclosureGroupで折りたたみ可能です。
 struct SettingsView: View {
     /// カラースキーム（ライト/ダークモード検出用）
     @Environment(\.colorScheme) private var colorScheme
@@ -60,17 +61,14 @@ struct SettingsView: View {
     /// ログエクスポートアクション
     let onExportLog: () async -> Void
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("設定")
-                .font(.caption)
-                .fontWeight(.semibold)
-                .foregroundStyle(.secondary)
-                .padding(.bottom, 4)
+    /// 設定セクションの展開状態
+    @State private var isExpanded = true
 
+    var body: some View {
+        DisclosureGroup(isExpanded: $isExpanded) {
             VStack(alignment: .leading, spacing: 16) {
-                // 更新間隔
-                HStack(spacing: 12) {
+            // 更新間隔
+            HStack(spacing: 12) {
                     Text("更新間隔:")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -153,6 +151,13 @@ struct SettingsView: View {
                     Spacer()
                 }
             }
+            .padding(.top, 8)
+            .padding(.horizontal, 8)
+        } label: {
+            Text("設定")
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundStyle(.secondary)
         }
     }
 }

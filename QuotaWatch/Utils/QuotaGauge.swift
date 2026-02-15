@@ -66,6 +66,8 @@ struct QuotaGauge: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(.white)
         }
+        .accessibilityLabel("クォータ残量ゲージ")
+        .accessibilityValue("\(remainingPercentage)パーセント残り")
     }
 }
 
