@@ -7,8 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		00112233445566778899AABB /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00112233445566778899AABC /* NotificationService.swift */; };
-		00112233445566778899AACC /* DashboardService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00112233445566778899AADD /* DashboardService.swift */; };
 		01A2B3C4D5E6F7890ABCDEF03 /* QuotaColorCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01A2B3C4D5E6F7890ABCDEF04 /* QuotaColorCalculator.swift */; };
 		037C2EC36038748A007836E6 /* QuotaEngineRunLoopTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A477064C7DA7510D89D89717 /* QuotaEngineRunLoopTests.swift */; };
 		093E54E3C0A343E7B35AC0DE /* SecondaryQuotaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8D463EFDC164E6E8A3E8D48 /* SecondaryQuotaView.swift */; };
@@ -78,8 +76,6 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		00112233445566778899AABC /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
-		00112233445566778899AADD /* DashboardService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardService.swift; sourceTree = "<group>"; };
 		01A2B3C4D5E6F7890ABCDEF04 /* QuotaColorCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaColorCalculator.swift; sourceTree = "<group>"; };
 		03084E81161F967B5B48ED5E /* ZaiProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZaiProviderTests.swift; sourceTree = "<group>"; };
 		0B1681A9E15047A7A927D11A1637FACB /* APIKeySettingsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIKeySettingsSheet.swift; sourceTree = "<group>"; };
@@ -234,15 +230,6 @@
 			path = Managers;
 			sourceTree = "<group>";
 		};
-		50A1B2C3D4E5F67890ABCDEF0 /* Services */ = {
-			isa = PBXGroup;
-			children = (
-				00112233445566778899AABC /* NotificationService.swift */,
-				00112233445566778899AADD /* DashboardService.swift */,
-			);
-			path = Services;
-			sourceTree = "<group>";
-		};
 		6AAFC47E2F1E277A00A022F2 /* Integration */ = {
 			isa = PBXGroup;
 			children = (
@@ -291,7 +278,6 @@
 				500309C37ACC2C24661B3538 /* Managers */,
 				AA8BF28402509C84884AC113 /* Models */,
 				0600DAE6697D9092D3B51F7F /* Providers */,
-				50A1B2C3D4E5F67890ABCDEF0 /* Services */,
 				BA9CA4CC4448EED19B311E87 /* Stores */,
 				2709B3D7EF05695939321623 /* Utils */,
 				7E8D54280F5923FDEEAEDA30 /* ViewModels */,
@@ -500,8 +486,6 @@
 				3B5D6E8F9A0B1234C5D6E790 /* MenuBarDonutIcon.swift in Sources */,
 				4A5B6C7D8E9F0A1B2C3D4E5F6 /* AppDelegate.swift in Sources */,
 				5C6D7E8F9A0B1234C5D6E790 /* MenuBarPopupView.swift in Sources */,
-				00112233445566778899AABB /* NotificationService.swift in Sources */,
-				00112233445566778899AACC /* DashboardService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
