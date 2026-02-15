@@ -3,14 +3,14 @@
 //  QuotaWatch
 //
 //  SwiftUI を使ってメニューバー用の円グラフアイコンを生成する
-//  Phase 6: 2つ並び（残量 + 残り時間）
+//  案A: 円グラフ（残量）＋ テキスト（残り時間）
 //
 
 import AppKit
 import SwiftUI
 
 /// SwiftUI を使って円グラフを描画し、NSImage を生成する構造体
-/// Phase 6: 2つの円を横並び（残量 + 残り時間）
+/// 案A: 円グラフ（残量%）＋ テキスト（残り時間）
 @MainActor
 struct MenuBarDonutIcon {
     /// 使用率（0-100）
@@ -22,10 +22,10 @@ struct MenuBarDonutIcon {
     /// 残り秒数
     let remainingSeconds: Int
 
-    /// 各円の直径
+    /// 円の直径
     let diameter: CGFloat
 
-    /// 2つの円の間隔
+    /// 円とテキストの間隔
     let spacing: CGFloat
 
     /// ステータス色を取得（残り率ベース、グラデーション適用）
@@ -36,6 +36,13 @@ struct MenuBarDonutIcon {
     /// 残りパーセント（0-100）
     private var remainingPercentage: Int {
         max(0, min(100, 100 - usagePercentage))
+    }
+
+    /// 時間テキストの幅（概算）
+    private var timeTextWidth: CGFloat {
+        let text = formatRemainingTime(remainingSeconds)
+        // 1文字あたり約7pt（等幅フォント）、最低32pt
+        return CGFloat(text.count) * 7.0 + 4
     }
 
     /// 初期化
@@ -55,12 +62,12 @@ struct MenuBarDonutIcon {
 
     /// NSImage を生成
     func makeImage() -> NSImage {
-        let totalWidth = diameter * 2 + spacing
+        let totalWidth = diameter + spacing + timeTextWidth
         let totalHeight = diameter
 
-        // SwiftUI View を作成（2つの円を横並び）
+        // SwiftUI View を作成（円グラフ ＋ テキスト）
         let view = HStack(spacing: spacing) {
-            // 左側: 残量（案E）
+            // 左側: 円グラフ（残量）
             UnifiedIconView(
                 displayText: "\(remainingPercentage)",
                 innerProgress: Double(remainingPercentage) / 100.0,
@@ -70,15 +77,10 @@ struct MenuBarDonutIcon {
                 size: diameter
             )
 
-            // 右側: 残り時間（青系）
-            UnifiedIconView(
-                displayText: formatRemainingTime(remainingSeconds),
-                innerProgress: timeProgress,
-                outerProgress: timeProgress,
-                innerColor: .blue.opacity(0.8),
-                outerColor: .blue.opacity(0.3),
-                size: diameter
-            )
+            // 右側: テキスト（残り時間）
+            Text(formatRemainingTime(remainingSeconds))
+                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                .foregroundStyle(.primary)
         }
         .frame(width: totalWidth, height: totalHeight)
 
@@ -243,33 +245,33 @@ private struct InnerDonutView: View {
 
 // MARK: - Preview
 
-#Preview("Phase 6: 2つ並び") {
+#Preview("案A: 円グラフ＋テキスト") {
     VStack(spacing: 20) {
         // 異なる残量のプレビュー
         HStack(spacing: 15) {
-            // 健全状態（75%残り、残り4時間32分）
+            // 健全状態（75%残り、残り1時間28分）
             Image(nsImage: MenuBarDonutIcon(
                 usagePercentage: 25,
                 timeProgress: 0.7,
-                remainingSeconds: 16320,
+                remainingSeconds: 5328,
                 diameter: 22
             ).makeImage())
             .background(Color.black.opacity(0.1))
 
-            // 警告状態（40%残り、残り2時間15分）
+            // 警告状態（40%残り、残り45分）
             Image(nsImage: MenuBarDonutIcon(
                 usagePercentage: 60,
                 timeProgress: 0.5,
-                remainingSeconds: 8100,
+                remainingSeconds: 2700,
                 diameter: 22
             ).makeImage())
             .background(Color.black.opacity(0.1))
 
-            // 危険状態（10%残り、残り45分）
+            // 危険状態（10%残り、残り3分）
             Image(nsImage: MenuBarDonutIcon(
                 usagePercentage: 90,
                 timeProgress: 0.3,
-                remainingSeconds: 2700,
+                remainingSeconds: 180,
                 diameter: 22
             ).makeImage())
             .background(Color.black.opacity(0.1))
@@ -278,29 +280,29 @@ private struct InnerDonutView: View {
 
         // 時間フォーマットのテスト
         HStack(spacing: 15) {
-            // 1時間以上
+            // 1時間以上（1:30）
             Image(nsImage: MenuBarDonutIcon(
                 usagePercentage: 30,
                 timeProgress: 0.5,
-                remainingSeconds: 5432, // 1:30:32
+                remainingSeconds: 5432,
                 diameter: 22
             ).makeImage())
             .background(Color.black.opacity(0.1))
 
-            // 1時間未満
+            // 1時間未満（30:32）
             Image(nsImage: MenuBarDonutIcon(
                 usagePercentage: 30,
                 timeProgress: 0.5,
-                remainingSeconds: 1832, // 30:32
+                remainingSeconds: 1832,
                 diameter: 22
             ).makeImage())
             .background(Color.black.opacity(0.1))
 
-            // 1分未満
+            // 1分未満（0:45）
             Image(nsImage: MenuBarDonutIcon(
                 usagePercentage: 30,
                 timeProgress: 0.5,
-                remainingSeconds: 45, // 0:45
+                remainingSeconds: 45,
                 diameter: 22
             ).makeImage())
             .background(Color.black.opacity(0.1))

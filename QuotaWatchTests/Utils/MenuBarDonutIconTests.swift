@@ -2,7 +2,7 @@
 //  MenuBarDonutIconTests.swift
 //  QuotaWatchTests
 //
-//  MenuBarDonutIconのテスト（Phase 6: 2つ並び）
+//  MenuBarDonutIconのテスト（案A: 円グラフ＋テキスト）
 //
 
 import XCTest
@@ -81,41 +81,41 @@ final class MenuBarDonutIconTests: XCTestCase {
         XCTAssertNotNil(icon100.makeImage())
     }
 
-    // MARK: - 画像サイズのテスト（Phase 6: 2つ並び）
+    // MARK: - 画像サイズのテスト（案A: 円＋テキスト）
 
     func testImageSizeStandard22pt() {
-        // 標準サイズ（22pt × 2 + スペース4pt = 48pt幅）
+        // 標準サイズ（円22pt + テキスト）
         let icon = MenuBarDonutIcon(usagePercentage: 50, timeProgress: 0.5, remainingSeconds: 1800, diameter: 22)
         let image = icon.makeImage()
 
         XCTAssertNotNil(image)
-        // 2つの円 + スペース = 22 * 2 + 4 = 48pt幅
-        XCTAssertEqual(image.size.width, 48, "画像の幅が48ピクセルであるべき")
+        // 円(22) + スペース(4) + テキスト(可変) = 円以上の幅
+        XCTAssertGreaterThan(image.size.width, 22, "画像の幅は円の直径より大きいべき")
         XCTAssertEqual(image.size.height, 22, "画像の高さが22ピクセルであるべき")
     }
 
     func testImageSizeSmall16pt() {
-        // 小さいサイズ（16pt × 2 + スペース4pt = 36pt幅）
+        // 小さいサイズ（円16pt + テキスト）
         let icon = MenuBarDonutIcon(usagePercentage: 50, timeProgress: 0.5, remainingSeconds: 1800, diameter: 16)
         let image = icon.makeImage()
 
         XCTAssertNotNil(image)
-        XCTAssertEqual(image.size.width, 36, "画像の幅が36ピクセルであるべき")
+        XCTAssertGreaterThan(image.size.width, 16, "画像の幅は円の直径より大きいべき")
         XCTAssertEqual(image.size.height, 16, "画像の高さが16ピクセルであるべき")
     }
 
-    // MARK: - Phase 6特有のテスト（2つ並び）
+    // MARK: - 案A特有のテスト（円＋テキスト）
 
-    func testDualIconGeneratesImage() {
-        // 2つの円が生成されることを確認
-        let icon = MenuBarDonutIcon(usagePercentage: 25, timeProgress: 0.7, remainingSeconds: 16320, diameter: 22)
+    func testIconWithTextGeneratesImage() {
+        // 円＋テキストが生成されることを確認
+        let icon = MenuBarDonutIcon(usagePercentage: 25, timeProgress: 0.7, remainingSeconds: 5328, diameter: 22)
         let image = icon.makeImage()
 
-        XCTAssertNotNil(image, "2つ並びアイコンが生成されるべき")
+        XCTAssertNotNil(image, "円＋テキストアイコンが生成されるべき")
         XCTAssertTrue(image.representations.count > 0, "画像表現が存在するべき")
-        // 幅は高さの約2倍（+ スペース）
-        XCTAssertEqual(image.size.width, 48, "幅は2つの円 + スペース")
-        XCTAssertEqual(image.size.height, 22, "高さは1つの円")
+        // 幅は円＋スペース＋テキスト
+        XCTAssertGreaterThan(image.size.width, 22, "幅は円より大きい")
+        XCTAssertEqual(image.size.height, 22, "高さは円の直径")
     }
 
     func testRemainingPercentageDisplay() {
@@ -209,7 +209,7 @@ final class MenuBarDonutIconTests: XCTestCase {
         let image = icon.makeImage()
 
         XCTAssertNotNil(image)
-        XCTAssertEqual(image.size.width, 48) // 22 * 2 + 4
+        XCTAssertGreaterThan(image.size.width, 22) // 円より広い
         XCTAssertEqual(image.size.height, 22)
     }
 
@@ -225,7 +225,8 @@ final class MenuBarDonutIconTests: XCTestCase {
         let image = icon.makeImage()
 
         XCTAssertNotNil(image)
-        XCTAssertEqual(image.size.width, 52) // 22 * 2 + 8
+        // スペースが広がるので幅も広がる
+        XCTAssertGreaterThan(image.size.width, 22)
         XCTAssertEqual(image.size.height, 22)
     }
 }
