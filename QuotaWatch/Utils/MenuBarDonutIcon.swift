@@ -168,9 +168,10 @@ private struct UnifiedIconView: View {
                 size: size * 0.75
             )
 
-            // 3. 中央の数字
+            // 3. 中央の数字（等幅フォントで左右均等）
             Text(displayText)
                 .font(.system(size: fontSize, weight: .bold, design: .rounded))
+                .monospacedDigit()
                 .foregroundStyle(innerColor)
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)
