@@ -140,13 +140,13 @@ private struct UnifiedIconView: View {
     let size: CGFloat
 
     /// 外枠の太さ
-    private var outerRingWidth: CGFloat { size * 0.08 }
+    private var outerRingWidth: CGFloat { size * 0.06 }
 
     /// 内側ドーナツの太さ
-    private var innerDonutWidth: CGFloat { size * 0.12 }
+    private var innerDonutWidth: CGFloat { size * 0.08 }
 
-    /// 数字のフォントサイズ
-    private var fontSize: CGFloat { size * 0.35 }
+    /// 数字のフォントサイズ（案1: 大きくして見やすく）
+    private var fontSize: CGFloat { size * 0.45 }
 
     var body: some View {
         ZStack {
