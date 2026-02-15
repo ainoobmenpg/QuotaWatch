@@ -111,6 +111,7 @@ struct MenuBarPopupView: View {
                         hasError: viewModel.errorMessage != nil,
                         providerDisplayName: viewModel.providerDisplayName
                     )
+                    .equatable()
                 }
 
                 Divider()
@@ -118,11 +119,13 @@ struct MenuBarPopupView: View {
                 // プライマリクォータ
                 if let snapshot = viewModel.snapshot {
                     PrimaryQuotaView(snapshot: snapshot)
+                        .equatable()
                 }
 
                 // セカンダリクォータ
                 if let snapshot = viewModel.snapshot {
                     SecondaryQuotaView(limits: snapshot.secondary)
+                        .equatable()
                 }
 
                 Divider()
@@ -135,6 +138,7 @@ struct MenuBarPopupView: View {
                         backoffFactor: engineState.backoffFactor,
                         errorMessage: viewModel.errorMessage
                     )
+                    .equatable()
                 }
 
                 Divider()

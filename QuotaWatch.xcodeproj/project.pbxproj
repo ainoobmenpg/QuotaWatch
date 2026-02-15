@@ -500,6 +500,8 @@
 				3B5D6E8F9A0B1234C5D6E790 /* MenuBarDonutIcon.swift in Sources */,
 				4A5B6C7D8E9F0A1B2C3D4E5F6 /* AppDelegate.swift in Sources */,
 				5C6D7E8F9A0B1234C5D6E790 /* MenuBarPopupView.swift in Sources */,
+				00112233445566778899AABB /* NotificationService.swift in Sources */,
+				00112233445566778899AACC /* DashboardService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

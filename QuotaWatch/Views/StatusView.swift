@@ -10,7 +10,9 @@ import SwiftUI
 /// 状態表示ビュー
 ///
 /// 最終フェッチ時刻、次回フェッチ時刻、バックオフ係数、エラーを表示します。
-struct StatusView: View {
+@MainActor
+@preconcurrency
+struct StatusView: View, Equatable {
     /// 最終フェッチ時刻（epoch秒）
     let lastFetchEpoch: Int
 
@@ -119,5 +121,14 @@ struct StatusView: View {
             let hours = diff / 3600
             return "\(hours)時間後"
         }
+    }
+
+    // MARK: - Equatable
+
+    nonisolated static func == (lhs: StatusView, rhs: StatusView) -> Bool {
+        lhs.lastFetchEpoch == rhs.lastFetchEpoch &&
+        lhs.nextFetchEpoch == rhs.nextFetchEpoch &&
+        lhs.backoffFactor == rhs.backoffFactor &&
+        lhs.errorMessage == rhs.errorMessage
     }
 }

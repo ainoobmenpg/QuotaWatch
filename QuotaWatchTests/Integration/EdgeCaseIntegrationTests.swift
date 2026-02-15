@@ -166,7 +166,7 @@ final class EdgeCaseIntegrationTests: XCTestCase {
         // nextFetchEpochを過去に設定
         let pastEpoch = Int(Date().timeIntervalSince1970) - 1000
         var state = try await persistence1.loadState()
-        state.nextFetchEpoch = pastEpoch
+        state.fetch.nextFetchEpoch = pastEpoch
         try await persistence1.saveState(state)
 
         // エンジンを破棄（強制終了をシミュレート）
@@ -223,8 +223,8 @@ final class EdgeCaseIntegrationTests: XCTestCase {
 
         // デフォルト値と比較（エラー時はデフォルト値が使用される）
         let defaultState = AppState()
-        XCTAssertEqual(loadedState.backoffFactor, defaultState.backoffFactor, "backoffFactorが有効であるべき")
-        XCTAssertEqual(loadedState.consecutiveFailureCount, defaultState.consecutiveFailureCount, "consecutiveFailureCountが有効であるべき")
+        XCTAssertEqual(loadedState.fetch.backoffFactor, defaultState.fetch.backoffFactor, "backoffFactorが有効であるべき")
+        XCTAssertEqual(loadedState.fetch.consecutiveFailureCount, defaultState.fetch.consecutiveFailureCount, "consecutiveFailureCountが有効であるべき")
     }
 
     // MARK: - ネットワークエラー

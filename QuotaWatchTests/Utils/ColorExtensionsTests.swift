@@ -9,6 +9,7 @@ import XCTest
 @testable import QuotaWatch
 import SwiftUI
 
+@MainActor
 final class ColorExtensionsTests: XCTestCase {
     // 残り率ベースの閾値: healthy=50%, warning=20%
 

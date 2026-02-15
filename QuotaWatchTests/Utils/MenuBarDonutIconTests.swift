@@ -9,6 +9,7 @@ import XCTest
 @testable import QuotaWatch
 import AppKit
 
+@MainActor
 final class MenuBarDonutIconTests: XCTestCase {
     // MARK: - 色計算ロジックのテスト
 

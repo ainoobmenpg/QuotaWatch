@@ -8,6 +8,34 @@
 import SwiftUI
 import Charts
 
+// MARK: - Base Protocol
+
+/// 円グラフコンポーネントの共通プロトコル
+///
+/// 残り率に応じた色分けを適用した円形グラフを表示するコンポーネントの基底プロトコル。
+@MainActor
+protocol BaseDonutChart: View {
+    /// 残りパーセンテージ（0-100）
+    var remainingPercentage: Int { get }
+
+    /// グラフのサイズ
+    var size: CGFloat { get }
+
+    /// 残り率に応じた色を計算する
+    func chartColor(for remainingPercentage: Int) -> Color
+}
+
+// MARK: - Default Implementation
+
+extension BaseDonutChart {
+    /// デフォルトの色計算実装
+    func chartColor(for remainingPercentage: Int) -> Color {
+        QuotaColorCalculator.shared.color(for: remainingPercentage)
+    }
+}
+
+// MARK: - Gauge Based Component
+
 /// 円形Gaugeコンポーネント
 ///
 /// 残り率に応じた色分け（緑/オレンジ/赤）を適用した円形グラフを表示します。
@@ -31,7 +59,7 @@ struct QuotaGauge: View {
             EmptyView()
         }
         .gaugeStyle(.accessoryCircularCapacity)
-        .tint(QuotaColorCalculator.color(for: remainingPercentage))
+        .tint(QuotaColorCalculator.shared.color(for: remainingPercentage))
         .frame(width: size, height: size)
         .overlay {
             Text("\(remainingPercentage)%")
@@ -41,35 +69,20 @@ struct QuotaGauge: View {
     }
 }
 
-// MARK: - ドーナツチャート（メニューバー表示用）
+// MARK: - Donut Chart Components
 
 /// メニューバー表示用の円グラフ（ドーナツチャート）
 /// 残り部分をメインの色で塗りつぶします
-struct MenuBarDonutChart: View {
+struct MenuBarDonutChart: BaseDonutChart {
     /// 使用率（0-100）
     let percentage: Int
 
     /// サイズ
     let size: CGFloat
 
-    /// 使用率（0-1）
-    private var usageRatio: Double {
-        return min(Double(percentage) / 100.0, 1.0)
-    }
-
-    /// 残りの割合（0-1）
-    private var remainingRatio: Double {
-        return max(1.0 - usageRatio, 0.0)
-    }
-
     /// 残りパーセンテージ
-    private var remainingPercentage: Int {
+    var remainingPercentage: Int {
         max(100 - percentage, 0)
-    }
-
-    /// 色の決定（残り率に応じて変化）
-    private var chartColor: Color {
-        QuotaColorCalculator.color(for: remainingPercentage)
     }
 
     var body: some View {
@@ -81,7 +94,7 @@ struct MenuBarDonutChart: View {
                 outerRadius: .ratio(1.0),
                 angularInset: 1.0
             )
-            .foregroundStyle(chartColor)
+            .foregroundStyle(chartColor(for: remainingPercentage))
 
             // 使用済みセクター（薄い色）
             SectorMark(
@@ -99,7 +112,7 @@ struct MenuBarDonutChart: View {
 
 /// メニューバー表示用の複合円グラフ
 /// 残り率と残り時間を2つの円グラフで並べて表示（残り強調）
-struct MenuBarDoubleDonutChart: View {
+struct MenuBarDoubleDonutChart: BaseDonutChart {
     /// 使用率（0-100）
     let usagePercentage: Int
 
@@ -110,13 +123,8 @@ struct MenuBarDoubleDonutChart: View {
     let size: CGFloat
 
     /// 残りパーセンテージ
-    private var remainingPercentage: Int {
+    var remainingPercentage: Int {
         max(100 - usagePercentage, 0)
-    }
-
-    /// ステータス色（残り率ベース）
-    private var statusColor: Color {
-        QuotaColorCalculator.color(for: remainingPercentage)
     }
 
     var body: some View {
@@ -134,7 +142,7 @@ struct MenuBarDoubleDonutChart: View {
                         outerRadius: .ratio(1.0),
                         angularInset: 1.0
                     )
-                    .foregroundStyle(statusColor)
+                    .foregroundStyle(chartColor(for: remainingPercentage))
 
                     // 使用済みセクター（薄い色）
                     SectorMark(

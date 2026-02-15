@@ -10,7 +10,9 @@ import SwiftUI
 /// ヘッダービュー
 ///
 /// アプリ名、状態アイコン、Providerラベルを表示します。
-struct HeaderView: View {
+@MainActor
+@preconcurrency
+struct HeaderView: View, Equatable {
     /// バックオフ中かどうか
     var isBackingOff: Bool
 
@@ -55,5 +57,13 @@ struct HeaderView: View {
                 .foregroundStyle(.green)
                 .help("正常に動作しています")
         }
+    }
+
+    // MARK: - Equatable
+
+    nonisolated static func == (lhs: HeaderView, rhs: HeaderView) -> Bool {
+        lhs.isBackingOff == rhs.isBackingOff &&
+        lhs.hasError == rhs.hasError &&
+        lhs.providerDisplayName == rhs.providerDisplayName
     }
 }

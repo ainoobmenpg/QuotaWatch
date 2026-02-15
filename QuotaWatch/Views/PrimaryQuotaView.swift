@@ -11,7 +11,8 @@ import SwiftUI
 ///
 /// Gauge（円形グラフ）＋ 線形ProgressViewを併用し、
 /// 使用量/上限/残りとリセット時刻を表示します。
-struct PrimaryQuotaView: View {
+@MainActor
+struct PrimaryQuotaView: View, Equatable {
     /// フォーマット定数
     private enum Format {
         static let decimal = "%.1f"
@@ -107,5 +108,11 @@ struct PrimaryQuotaView: View {
         } else {
             return String(format: Format.integer, value)
         }
+    }
+
+    // MARK: - Equatable
+
+    nonisolated static func == (lhs: PrimaryQuotaView, rhs: PrimaryQuotaView) -> Bool {
+        lhs.snapshot == rhs.snapshot
     }
 }

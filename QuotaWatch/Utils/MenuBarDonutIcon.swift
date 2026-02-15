@@ -2,12 +2,14 @@
 //  MenuBarDonutIcon.swift
 //  QuotaWatch
 //
-//  NSBezierPath を使ってメニューバー用の円グラフアイコンを生成する
+//  SwiftUI を使ってメニューバー用の円グラフアイコンを生成する
 //
 
 import AppKit
+import SwiftUI
 
-/// NSBezierPath を使って円グラフを描画し、NSImage を生成する構造体
+/// SwiftUI を使って円グラフを描画し、NSImage を生成する構造体
+@MainActor
 struct MenuBarDonutIcon {
     /// 使用率（0-100）
     let usagePercentage: Int
@@ -19,13 +21,13 @@ struct MenuBarDonutIcon {
     let diameter: CGFloat
 
     /// ステータス色を取得（残り率ベース）
-    private var statusColor: NSColor {
-        QuotaColorCalculator.nsColor(forUsage: usagePercentage)
+    private var statusColor: Color {
+        QuotaColorCalculator.shared.color(forUsage: usagePercentage)
     }
 
     /// NSImage を生成
     func makeImage() -> NSImage {
-        // 絵文字(10pt) + 円グラフ(16pt) + スペース(2pt) × 2 + グラフ間スペース(15pt) = 約51pt幅
+        // 絵文字(10pt) + 円グラフ(16pt) + スペース(2pt) × 2 + グラフ間スペース(8pt) = 約51pt幅
         let emojiSize: CGFloat = 10
         let spacing: CGFloat = 8
         let chartSpacing: CGFloat = 8
@@ -35,82 +37,121 @@ struct MenuBarDonutIcon {
         let rightGroupWidth = emojiSize + spacing + chartWidth
         let totalWidth = leftGroupWidth + chartSpacing + rightGroupWidth
 
-        let image = NSImage(size: NSSize(width: totalWidth, height: diameter))
-        image.lockFocus()
+        // SwiftUI View を作成
+        let view = ZStack {
+            // 背景は透明
+            Color.clear
 
-        let context = NSGraphicsContext.current?.cgContext
-        context?.setShouldAntialias(true)
+            HStack(spacing: 0) {
+                // 左側：使用率グラフ + 絵文字
+                HStack(spacing: spacing) {
+                    Text("📊")
+                        .font(.system(size: emojiSize))
+                        .frame(width: emojiSize, height: diameter, alignment: .center)
 
-        // 左側：使用率グラフ + 📊
-        let leftX: CGFloat = 0
-        drawEmoji("📊", at: NSPoint(x: leftX, y: 0), size: emojiSize, centerY: diameter / 2)
-        let chart1Center = NSPoint(x: leftX + emojiSize + spacing + diameter / 2, y: diameter / 2)
-        drawDonutChart(
-            center: chart1Center,
-            diameter: diameter,
-            percentage: usagePercentage,
-            color: statusColor
-        )
+                    MenuBarDonutChartView(
+                        percentage: usagePercentage,
+                        color: statusColor,
+                        size: diameter
+                    )
+                }
 
-        // 右側：残り時間グラフ + ⏰
-        let rightX = leftX + emojiSize + spacing + diameter + chartSpacing
-        drawEmoji("⏰", at: NSPoint(x: rightX, y: 0), size: emojiSize, centerY: diameter / 2)
-        let chart2Center = NSPoint(x: rightX + emojiSize + spacing + diameter / 2, y: diameter / 2)
-        drawDonutChart(
-            center: chart2Center,
-            diameter: diameter,
-            percentage: Int(timeProgress * 100),
-            color: .systemBlue
-        )
+                // スペース
+                Spacer()
+                    .frame(width: chartSpacing)
 
-        image.unlockFocus()
-        return image
+                // 右側：残り時間グラフ + 絵文字
+                HStack(spacing: spacing) {
+                    Text("⏰")
+                        .font(.system(size: emojiSize))
+                        .frame(width: emojiSize, height: diameter, alignment: .center)
+
+                    MenuBarDonutChartView(
+                        percentage: Int(timeProgress * 100),
+                        color: .blue,
+                        size: diameter
+                    )
+                }
+            }
+        }
+        .frame(width: totalWidth, height: diameter)
+
+        // ImageRenderer で NSImage に変換
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = 1.0
+        renderer.isOpaque = false
+
+        guard let nsImage = renderer.nsImage else {
+            // フォールバック：空の画像を返す
+            return NSImage(size: NSSize(width: totalWidth, height: diameter))
+        }
+
+        return nsImage
+    }
+}
+
+/// メニューバー用のシンプルな円グラフ（残り強調）
+private struct MenuBarDonutChartView: View {
+    /// 使用率（0-100）
+    let percentage: Int
+
+    /// 色
+    let color: Color
+
+    /// サイズ
+    let size: CGFloat
+
+    /// 残り率
+    private var remainingPercentage: Int {
+        max(0, min(100, 100 - percentage))
     }
 
-    /// 絵文字を描画（中央揃え）
-    private func drawEmoji(_ emoji: String, at point: NSPoint, size: CGFloat, centerY: CGFloat) {
-        let font = NSFont.systemFont(ofSize: size)
-        let attrs: [NSAttributedString.Key: Any] = [.font: font]
-        let attrString = NSAttributedString(string: emoji, attributes: attrs)
+    var body: some View {
+        ZStack {
+            // 背景円（使用済み部分）
+            Circle()
+                .stroke(
+                    Color.secondary.opacity(0.2),
+                    lineWidth: 3.0
+                )
 
-        // 完全中央揃え
-        let yOffset = centerY - size / 2 - 2
-
-        attrString.draw(at: NSPoint(x: point.x, y: yOffset))
+            // 残り円グラフ（メインの色）
+            Circle()
+                .trim(from: 0, to: CGFloat(remainingPercentage) / 100.0)
+                .stroke(
+                    color,
+                    style: StrokeStyle(lineWidth: 3.0, lineCap: .round)
+                )
+                .rotationEffect(.degrees(-90)) // 上から始める
+                .animation(.easeInOut, value: remainingPercentage)
+        }
+        .frame(width: size, height: size)
     }
+}
 
-    /// 円グラフを描画（残り強調）
-    private func drawDonutChart(center: NSPoint, diameter: CGFloat, percentage: Int, color: NSColor) {
-        let radius = diameter / 2
-        let lineWidth: CGFloat = 3.0
+#Preview {
+    VStack(spacing: 20) {
+        // 異なる使用率のプレビュー
+        HStack(spacing: 15) {
+            Image(nsImage: MenuBarDonutIcon(
+                usagePercentage: 20,
+                timeProgress: 0.7,
+                diameter: 16
+            ).makeImage())
 
-        // 背景円（薄いグレー - 使用済み部分）
-        let backgroundPath = NSBezierPath()
-        backgroundPath.appendArc(
-            withCenter: center,
-            radius: radius - lineWidth / 2,
-            startAngle: 0,
-            endAngle: 360
-        )
-        NSColor.separatorColor.withAlphaComponent(0.3).setStroke()
-        backgroundPath.lineWidth = lineWidth
-        backgroundPath.stroke()
+            Image(nsImage: MenuBarDonutIcon(
+                usagePercentage: 50,
+                timeProgress: 0.5,
+                diameter: 16
+            ).makeImage())
 
-        // 残り円グラフ（メインの色）
-        let remainingPercentage = max(0, min(100, 100 - percentage))
-        let startAngle: CGFloat = 90  // 上から始める
-        let endAngle = startAngle - (CGFloat(remainingPercentage) / 100.0 * 360)
-
-        let foregroundPath = NSBezierPath()
-        foregroundPath.appendArc(
-            withCenter: center,
-            radius: radius - lineWidth / 2,
-            startAngle: startAngle,
-            endAngle: endAngle,
-            clockwise: true
-        )
-        color.setStroke()
-        foregroundPath.lineWidth = lineWidth
-        foregroundPath.stroke()
+            Image(nsImage: MenuBarDonutIcon(
+                usagePercentage: 80,
+                timeProgress: 0.3,
+                diameter: 16
+            ).makeImage())
+        }
+        .padding()
+        .background(Color.black.opacity(0.1))
     }
 }

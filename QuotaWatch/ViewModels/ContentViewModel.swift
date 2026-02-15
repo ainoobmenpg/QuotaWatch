@@ -40,10 +40,18 @@ public struct EngineState: Equatable, Sendable {
 
     /// AppStateから変換
     init(from appState: AppState) {
-        self.nextFetchEpoch = appState.nextFetchEpoch
-        self.backoffFactor = appState.backoffFactor
-        self.lastFetchEpoch = appState.lastFetchEpoch
-        self.consecutiveFailureCount = appState.consecutiveFailureCount
+        self.nextFetchEpoch = appState.fetch.nextFetchEpoch
+        self.backoffFactor = appState.fetch.backoffFactor
+        self.lastFetchEpoch = appState.fetch.lastFetchEpoch
+        self.consecutiveFailureCount = appState.fetch.consecutiveFailureCount
+    }
+
+    /// FetchStateから変換
+    init(from fetchState: FetchState) {
+        self.nextFetchEpoch = fetchState.nextFetchEpoch
+        self.backoffFactor = fetchState.backoffFactor
+        self.lastFetchEpoch = fetchState.lastFetchEpoch
+        self.consecutiveFailureCount = fetchState.consecutiveFailureCount
     }
 
     /// 値を指定して初期化（テスト用）

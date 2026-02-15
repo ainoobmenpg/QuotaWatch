@@ -12,7 +12,8 @@ extension Color {
     ///
     /// - Parameter percentage: 残りパーセンテージ（0-100）
     /// - Returns: 残り率に応じた色（緑: >50%, オレンジ: 20-50%, 赤: <=20%）
+    @MainActor
     static func statusColor(for percentage: Int) -> Color {
-        QuotaColorCalculator.color(for: percentage)
+        QuotaColorCalculator.shared.color(for: percentage)
     }
 }

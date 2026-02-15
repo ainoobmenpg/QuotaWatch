@@ -11,7 +11,8 @@ import Charts
 /// セカンダリクォータ表示ビュー
 ///
 /// UsageLimit一覧を表示し、それぞれの使用率に応じた色分けを適用します。
-struct SecondaryQuotaView: View {
+@MainActor
+struct SecondaryQuotaView: View, Equatable {
     /// セカンダリクォータのリスト
     let limits: [UsageLimit]
 
@@ -79,10 +80,17 @@ struct SecondaryQuotaView: View {
             }
         }
     }
+
+    // MARK: - Equatable
+
+    nonisolated static func == (lhs: SecondaryQuotaView, rhs: SecondaryQuotaView) -> Bool {
+        lhs.limits == rhs.limits && lhs.maxCount == rhs.maxCount
+    }
 }
 
 /// セカンダリクォータ用の小型ドーナツチャート
 /// 残り部分をメインの色で塗りつぶします
+@MainActor
 struct SecondaryDonutChart: View {
     /// 使用率（0-100）
     let percentage: Int
@@ -97,7 +105,7 @@ struct SecondaryDonutChart: View {
 
     /// 色の決定（残り率に応じて変化）
     private var chartColor: Color {
-        QuotaColorCalculator.color(for: remainingPercentage)
+        QuotaColorCalculator.shared.color(for: remainingPercentage)
     }
 
     var body: some View {
