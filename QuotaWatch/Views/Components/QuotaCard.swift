@@ -1,18 +1,17 @@
 import SwiftUI
 import AppKit
 
-/// 統一されたカード型コンテナ
+/// 統一されたカード型コンテナ（Liquid Glass対応）
 ///
-/// ドロップシャドウ、角丸、背景を持つカードスタイルを提供します。
-/// オプションでグラデーション背景もサポートします。
+/// macOS 26 (Tahoe) の Liquid Glass デザイン言語を使用したカードスタイルを提供します。
 struct QuotaCard<Content: View>: View {
     // MARK: - Properties
 
     /// カードのタイトル
     let title: String?
 
-    /// グラデーション背景色（nilの場合は単色背景）
-    let gradientColors: [Color]?
+    /// ティント色（Liquid Glass用）
+    let tintColor: Color?
 
     /// カードのコンテンツ
     @ViewBuilder let content: () -> Content
@@ -23,15 +22,18 @@ struct QuotaCard<Content: View>: View {
     ///
     /// - Parameters:
     ///   - title: カードのタイトル（省略可能）
-    ///   - gradientColors: グラデーション背景の色配列（省略可能）
+    ///   - gradientColors: グラデーション背景の色配列（非推奨 - tintColorを使用）
+    ///   - tintColor: Liquid Glass用のティント色
     ///   - content: カード内に表示するコンテンツ
     init(
         title: String? = nil,
         gradientColors: [Color]? = nil,
+        tintColor: Color? = nil,
         @ViewBuilder content: @escaping () -> Content
     ) {
         self.title = title
-        self.gradientColors = gradientColors
+        // gradientColorsから最初の色をティント色として使用
+        self.tintColor = tintColor ?? gradientColors?.first
         self.content = content
     }
 
@@ -51,37 +53,21 @@ struct QuotaCard<Content: View>: View {
             content()
         }
         .padding(16)
-        .cardBackground(gradientColors: gradientColors)
+        .glassCardBackground(tintColor: tintColor)
         .accessibilityElement(children: .combine)
     }
 }
 
-// MARK: - Card Background Modifier
+// MARK: - Glass Card Background Modifier
 
 private extension View {
-    /// カード用の背景を適用する修飾子
-    func cardBackground(gradientColors: [Color]?) -> some View {
-        self.background(
-            Group {
-                if let colors = gradientColors, !colors.isEmpty {
-                    // グラデーション背景
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(
-                            LinearGradient(
-                                colors: colors,
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .shadow(color: .black.opacity(0.1), radius: 8, y: 2)
-                } else {
-                    // 単色背景（ダークモード対応）
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(nsColor: .controlBackgroundColor))
-                        .shadow(color: .black.opacity(0.1), radius: 8, y: 2)
-                }
-            }
-        )
+    /// Liquid Glass カード用の背景を適用する修飾子
+    func glassCardBackground(tintColor: Color?) -> some View {
+        self
+            .glassEffect(
+                tintColor != nil ? .regular.tint(tintColor!) : .regular,
+                in: .rect(cornerRadius: 12)
+            )
     }
 }
 

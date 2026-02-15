@@ -2,18 +2,17 @@
 //  ActionsView.swift
 //  QuotaWatch
 //
-//  アクションボタンセクション
+//  アクションボタンセクション（Liquid Glass対応）
 //
 
 import SwiftUI
 
-/// ホバーエフェクト付きアイコンボタン
+/// Liquid Glass アイコンボタン
 struct IconButton: View {
     let systemImage: String
     let tooltip: String
     let action: () async -> Void
     var isDisabled: Bool = false
-    @State private var isHovering = false
 
     var body: some View {
         Button {
@@ -23,27 +22,14 @@ struct IconButton: View {
                 .font(.system(size: 16))
                 .foregroundStyle(isDisabled ? .secondary : .primary)
                 .frame(width: 36, height: 36)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(isHovering && !isDisabled ? Color.accentColor.opacity(0.1) : Color.clear)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(isHovering && !isDisabled ? Color.accentColor.opacity(0.3) : Color.clear, lineWidth: 1)
-                )
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(.glass)
         .disabled(isDisabled)
         .help(tooltip)
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isHovering = hovering
-            }
-        }
     }
 }
 
-/// アクションビュー
+/// アクションビュー（Liquid Glass対応）
 ///
 /// Force fetch、Test notification、Open Dashboardのアイコンボタンを表示します。
 struct ActionsView: View {

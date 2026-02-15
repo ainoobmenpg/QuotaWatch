@@ -96,99 +96,101 @@ struct MenuBarPopupView: View {
     @ViewBuilder
     private func contentView(viewModel: ContentViewModel) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                if viewModel.isLoadingInitialData {
-                    // スケルトンローダー（初期ロード中）
-                    loadingSkeletonView()
-                } else if viewModel.authorizationError {
-                    // 認証エラー時の専用UI
-                    unauthorizedView()
-                } else {
-                    // ヘッダー
-                if let engineState = viewModel.engineState {
-                    HeaderView(
-                        isBackingOff: engineState.isBackingOff,
-                        hasError: viewModel.errorMessage != nil,
-                        providerDisplayName: viewModel.providerDisplayName
-                    )
-                    .equatable()
-                }
-
-                Divider()
-
-                // プライマリクォータ
-                if let snapshot = viewModel.snapshot {
-                    PrimaryQuotaView(snapshot: snapshot)
+            GlassEffectContainer(spacing: 40) {
+                VStack(alignment: .leading, spacing: 16) {
+                    if viewModel.isLoadingInitialData {
+                        // スケルトンローダー（初期ロード中）
+                        loadingSkeletonView()
+                    } else if viewModel.authorizationError {
+                        // 認証エラー時の専用UI
+                        unauthorizedView()
+                    } else {
+                        // ヘッダー
+                    if let engineState = viewModel.engineState {
+                        HeaderView(
+                            isBackingOff: engineState.isBackingOff,
+                            hasError: viewModel.errorMessage != nil,
+                            providerDisplayName: viewModel.providerDisplayName
+                        )
                         .equatable()
-                }
-
-                // セカンダリクォータ
-                if let snapshot = viewModel.snapshot {
-                    SecondaryQuotaView(limits: snapshot.secondary)
-                        .equatable()
-                }
-
-                Divider()
-
-                // ステータス
-                if let engineState = viewModel.engineState {
-                    StatusView(
-                        lastFetchEpoch: engineState.lastFetchEpoch,
-                        nextFetchEpoch: engineState.nextFetchEpoch,
-                        backoffFactor: engineState.backoffFactor,
-                        errorMessage: viewModel.errorMessage
-                    )
-                    .equatable()
-                }
-
-                Divider()
-
-                // アクション
-                ActionsView(
-                    onForceFetch: {
-                        await viewModel.forceFetch()
-                    },
-                    onTestNotification: {
-                        await viewModel.sendTestNotification()
-                    },
-                    onOpenDashboard: {
-                        await viewModel.openDashboard()
-                    },
-                    isFetching: viewModel.isFetching,
-                    dashboardURL: viewModel.dashboardURL
-                )
-
-                Divider()
-
-                // 設定
-                SettingsView(
-                    settings: viewModel.appSettings,
-                    onUpdateIntervalChanged: { interval in
-                        await viewModel.setUpdateInterval(interval)
-                    },
-                    onNotificationsChanged: { enabled in
-                        await viewModel.setNotificationsEnabled(enabled)
-                    },
-                    onLoginItemChanged: { enabled in
-                        await viewModel.setLoginItemEnabled(enabled)
-                    },
-                    onExportLog: {
-                        Task {
-                            _ = await viewModel.exportDebugLog()
-                        }
                     }
-                )
 
-                // エラーメッセージ
-                if let errorMessage = viewModel.errorMessage {
-                    Text(errorMessage)
-                        .font(.caption)
-                        .foregroundColor(.red)
-                        .padding(.top, 4)
+                    Divider()
+
+                    // プライマリクォータ
+                    if let snapshot = viewModel.snapshot {
+                        PrimaryQuotaView(snapshot: snapshot)
+                            .equatable()
+                    }
+
+                    // セカンダリクォータ
+                    if let snapshot = viewModel.snapshot {
+                        SecondaryQuotaView(limits: snapshot.secondary)
+                            .equatable()
+                    }
+
+                    Divider()
+
+                    // ステータス
+                    if let engineState = viewModel.engineState {
+                        StatusView(
+                            lastFetchEpoch: engineState.lastFetchEpoch,
+                            nextFetchEpoch: engineState.nextFetchEpoch,
+                            backoffFactor: engineState.backoffFactor,
+                            errorMessage: viewModel.errorMessage
+                        )
+                        .equatable()
+                    }
+
+                    Divider()
+
+                    // アクション
+                    ActionsView(
+                        onForceFetch: {
+                            await viewModel.forceFetch()
+                        },
+                        onTestNotification: {
+                            await viewModel.sendTestNotification()
+                        },
+                        onOpenDashboard: {
+                            await viewModel.openDashboard()
+                        },
+                        isFetching: viewModel.isFetching,
+                        dashboardURL: viewModel.dashboardURL
+                    )
+
+                    Divider()
+
+                    // 設定
+                    SettingsView(
+                        settings: viewModel.appSettings,
+                        onUpdateIntervalChanged: { interval in
+                            await viewModel.setUpdateInterval(interval)
+                        },
+                        onNotificationsChanged: { enabled in
+                            await viewModel.setNotificationsEnabled(enabled)
+                        },
+                        onLoginItemChanged: { enabled in
+                            await viewModel.setLoginItemEnabled(enabled)
+                        },
+                        onExportLog: {
+                            Task {
+                                _ = await viewModel.exportDebugLog()
+                            }
+                        }
+                    )
+
+                    // エラーメッセージ
+                    if let errorMessage = viewModel.errorMessage {
+                        Text(errorMessage)
+                            .font(.caption)
+                            .foregroundColor(.red)
+                            .padding(.top, 4)
+                    }
+                    }
                 }
-                }
+                .padding()
             }
-            .padding()
         }
         .frame(minWidth: 320, idealWidth: 360, maxWidth: 420)
     }
