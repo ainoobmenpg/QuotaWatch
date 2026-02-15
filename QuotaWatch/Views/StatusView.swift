@@ -91,6 +91,11 @@ struct StatusView: View, Equatable {
         let now = Date().epochSeconds
         let diff = now - lastFetchEpoch
 
+        // 未来の日付や異常値（負のdiff）の場合
+        if diff < 0 {
+            return "不明"
+        }
+
         if diff < 60 {
             return "\(diff)秒前"
         } else if diff < 3600 {

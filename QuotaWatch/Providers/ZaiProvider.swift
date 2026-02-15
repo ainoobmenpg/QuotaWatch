@@ -70,7 +70,10 @@ public struct ZaiProvider: Provider {
                 throw ProviderError.httpError(statusCode: httpResponse.statusCode)
             }
 
-            // JSONデコード
+            // JSONデコード（デバッグ用にデータをログ出力）
+            if let dataString = String(data: data, encoding: .utf8) {
+                Self.logger.debug("受信データ（先頭500文字）: \(dataString.prefix(500))")
+            }
             let quotaResponse = try JSONDecoder().decode(QuotaResponse.self, from: data)
 
             // 成功判定: codeが0または200の場合は成功
