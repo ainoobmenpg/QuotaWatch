@@ -7,31 +7,45 @@
 
 import SwiftUI
 
-/// 非同期アクションを実行するボタン
-struct AsyncButton: View {
-    let title: String
-    let systemImage: String?
+/// ホバーエフェクト付きアイコンボタン
+struct IconButton: View {
+    let systemImage: String
+    let tooltip: String
     let action: () async -> Void
     var isDisabled: Bool = false
+    @State private var isHovering = false
 
     var body: some View {
         Button {
             Task { await action() }
         } label: {
-            if let systemImage = systemImage {
-                Label(title, systemImage: systemImage)
-            } else {
-                Text(title)
+            Image(systemName: systemImage)
+                .font(.system(size: 16))
+                .foregroundStyle(isDisabled ? .secondary : .primary)
+                .frame(width: 36, height: 36)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(isHovering && !isDisabled ? Color.accentColor.opacity(0.1) : Color.clear)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(isHovering && !isDisabled ? Color.accentColor.opacity(0.3) : Color.clear, lineWidth: 1)
+                )
+        }
+        .buttonStyle(PlainButtonStyle())
+        .disabled(isDisabled)
+        .help(tooltip)
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isHovering = hovering
             }
         }
-        .buttonStyle(.bordered)
-        .disabled(isDisabled)
     }
 }
 
 /// アクションビュー
 ///
-/// Force fetch、Test notification、Open Dashboardのボタンを表示します。
+/// Force fetch、Test notification、Open Dashboardのアイコンボタンを表示します。
 struct ActionsView: View {
     /// 強制フェッチアクション
     let onForceFetch: () async -> Void
@@ -55,27 +69,27 @@ struct ActionsView: View {
                 .fontWeight(.semibold)
                 .foregroundStyle(.secondary)
 
-            VStack(spacing: 8) {
+            HStack(spacing: 8) {
                 // Force fetch
-                AsyncButton(
-                    title: "強制フェッチ",
+                IconButton(
                     systemImage: "arrow.clockwise",
+                    tooltip: "強制フェッチ",
                     action: onForceFetch,
                     isDisabled: isFetching
                 )
 
                 // Test notification
-                AsyncButton(
-                    title: "通知テスト",
+                IconButton(
                     systemImage: "bell.badge",
+                    tooltip: "通知テスト",
                     action: onTestNotification
                 )
 
                 // Open dashboard
                 if dashboardURL != nil {
-                    AsyncButton(
-                        title: "ダッシュボード",
+                    IconButton(
                         systemImage: "safari",
+                        tooltip: "ダッシュボード",
                         action: onOpenDashboard
                     )
                 }

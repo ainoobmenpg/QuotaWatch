@@ -27,17 +27,29 @@ final class EngineStateTests: XCTestCase {
     }
 
     func testInitializationFromAppState() {
-        let appState = AppState(
-            nextFetchEpoch: 1234567890,
-            backoffFactor: 4,
-            lastFetchEpoch: 1234567500,
-            lastError: "Test error",
-            lastKnownResetEpoch: 0,
-            lastNotifiedResetEpoch: 0,
-            consecutiveFailureCount: 5
-        )
+        var appState = AppState()
+        appState.fetch.nextFetchEpoch = 1234567890
+        appState.fetch.backoffFactor = 4
+        appState.fetch.lastFetchEpoch = 1234567500
+        appState.fetch.lastError = "Test error"
+        appState.fetch.consecutiveFailureCount = 5
 
         let state = EngineState(from: appState)
+
+        XCTAssertEqual(state.nextFetchEpoch, 1234567890)
+        XCTAssertEqual(state.backoffFactor, 4)
+        XCTAssertEqual(state.lastFetchEpoch, 1234567500)
+        XCTAssertEqual(state.consecutiveFailureCount, 5)
+    }
+
+    func testInitializationFromFetchState() {
+        var fetchState = FetchState()
+        fetchState.nextFetchEpoch = 1234567890
+        fetchState.backoffFactor = 4
+        fetchState.lastFetchEpoch = 1234567500
+        fetchState.consecutiveFailureCount = 5
+
+        let state = EngineState(from: fetchState)
 
         XCTAssertEqual(state.nextFetchEpoch, 1234567890)
         XCTAssertEqual(state.backoffFactor, 4)

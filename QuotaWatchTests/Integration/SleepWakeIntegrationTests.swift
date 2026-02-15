@@ -45,7 +45,7 @@ final class SleepWakeIntegrationTests: XCTestCase {
         _ logContents: String,
         category: String,
         expectedMessages: [String],
-        file: StaticString = #file,
+        file: StaticString = #filePath,
         line: UInt = #line
     ) {
         let logs = extractLogs(byCategory: category, from: logContents)

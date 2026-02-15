@@ -150,20 +150,6 @@ public actor MockQuotaEngine: QuotaEngineProtocol {
         // モックでは何もしない
     }
 
-    #if DEBUG
-    public func overrideNextFetchEpoch(_ epoch: Int) {
-        mockAppState.nextFetchEpoch = epoch
-    }
-
-    public func getDebugLogContents() async -> String {
-        return debugLogContents
-    }
-
-    public func clearDebugLog() async {
-        debugLogContents = ""
-    }
-    #endif
-
     // MARK: - ヘルパー
 
     /// モック状態を更新
@@ -225,3 +211,21 @@ public actor MockQuotaEngine: QuotaEngineProtocol {
         return snapshot
     }
 }
+
+// MARK: - QuotaEngineDebugProtocol準拠（DEBUGビルドのみ）
+
+#if DEBUG
+extension MockQuotaEngine: QuotaEngineDebugProtocol {
+    public func overrideNextFetchEpoch(_ epoch: Int) {
+        mockAppState.nextFetchEpoch = epoch
+    }
+
+    public func getDebugLogContents() async -> String {
+        return debugLogContents
+    }
+
+    public func clearDebugLog() async {
+        debugLogContents = ""
+    }
+}
+#endif

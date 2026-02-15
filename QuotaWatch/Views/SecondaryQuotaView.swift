@@ -10,8 +10,11 @@ import Charts
 
 /// セカンダリクォータ表示ビュー
 ///
-/// UsageLimit一覧を表示し、それぞれの使用率に応じた色分けを適用します。
-struct SecondaryQuotaView: View {
+/// UsageLimit一覧を横並びのカード形式で表示し、それぞれの使用率に応じた色分けを適用します。
+/// percentageのみのデータもサポートします。
+@MainActor
+struct SecondaryQuotaView: View, Equatable {
+    @Environment(\.colorScheme) private var colorScheme
     /// セカンダリクォータのリスト
     let limits: [UsageLimit]
 
@@ -20,24 +23,24 @@ struct SecondaryQuotaView: View {
 
     var body: some View {
         if !displayedLimits.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("その他のクォータ")
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
+            QuotaCard(title: "その他のクォータ") {
+                // 横並びレイアウト
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(displayedLimits) { limit in
+                            secondaryQuotaCard(limit)
+                        }
 
-                VStack(alignment: .leading, spacing: 6) {
-                    ForEach(displayedLimits) { limit in
-                        secondaryLimitRow(limit)
+                        // 追加インジケーター
+                        if limits.count > maxCount {
+                            moreIndicator
+                        }
                     }
-
-                    if limits.count > maxCount {
-                        Text("+ \(limits.count - maxCount)件のクォータ")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
+                    .padding(.vertical, 4)
                 }
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("その他のクォータ、\(displayedLimits.count)件表示中")
         }
     }
 
@@ -46,87 +49,200 @@ struct SecondaryQuotaView: View {
         Array(limits.prefix(maxCount))
     }
 
-    /// セカンダリクォータ行を表示
+    /// セカンダリクォータカード（小型）
     @ViewBuilder
-    private func secondaryLimitRow(_ limit: UsageLimit) -> some View {
-        HStack(spacing: 8) {
-            // ドーナツチャート（残り強調）
-            if let pct = limit.pct {
-                SecondaryDonutChart(percentage: pct, size: 24)
-            }
+    private func secondaryQuotaCard(_ limit: UsageLimit) -> some View {
+        VStack(spacing: 8) {
+            // 小型円グラフ（32pt）
+            secondaryGauge(for: limit)
 
-            // ラベルと詳細情報
+            // ラベル
+            Text(limit.label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .frame(maxWidth: 60)
+
+            // 使用率または残り量表示
             VStack(alignment: .leading, spacing: 2) {
-                HStack {
-                    Text(limit.label)
+                if let pct = limit.pct {
+                    Text("\(pct)%")
                         .font(.caption)
-                        .foregroundStyle(.primary)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(percentageColor(pct))
+                } else if let remaining = limit.remaining {
+                    Text(formatRemaining(remaining))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("N/A")
+                        .font(.caption)
+                        .foregroundStyle(Color.secondary.opacity(0.6))
+                }
 
-                    if let pct = limit.pct {
-                        Text("\(pct)%")
-                            .font(.caption)
-                            .foregroundStyle(Color.statusColor(for: max(100 - pct, 0)))
-                    }
-
-                    Spacer()
-
-                    if let resetEpoch = limit.resetEpoch {
-                        Text(TimeFormatter.formatTimeRemaining(resetEpoch: resetEpoch))
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
+                // リセット時刻
+                if let resetEpoch = limit.resetEpoch {
+                    Text(TimeFormatter.formatTimeRemaining(resetEpoch: resetEpoch))
+                        .font(.caption2)
+                        .foregroundStyle(Color.secondary.opacity(0.6))
                 }
             }
         }
+        .frame(width: 80)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.5))
+        )
+    }
+
+    /// セカンダリ用小型ゲージ（32pt）
+    @ViewBuilder
+    private func secondaryGauge(for limit: UsageLimit) -> some View {
+        let size: CGFloat = 32
+
+        if let pct = limit.pct {
+            // percentageがある場合は円グラフを表示
+            let remaining = max(100 - pct, 0)
+            let color = QuotaColorCalculator.shared.color(for: remaining)
+
+            Chart {
+                // 残りセクター（メインの色）
+                SectorMark(
+                    angle: .value("残り", Double(remaining)),
+                    innerRadius: .ratio(0.6),
+                    outerRadius: .ratio(1.0),
+                    angularInset: 1.5
+                )
+                .foregroundStyle(color)
+
+                // 使用済みセクター（薄い色）
+                SectorMark(
+                    angle: .value("使用済み", Double(pct)),
+                    innerRadius: .ratio(0.6),
+                    outerRadius: .ratio(1.0),
+                    angularInset: 1.5
+                )
+                .foregroundStyle(Color.secondary.opacity(0.15))
+            }
+            .frame(width: size, height: size)
+            .chartLegend(.hidden)
+        } else if let remaining = limit.remaining, let total = limit.total {
+            // usageがないがremaining/totalがある場合は残り量を表示
+            let pct = Int((remaining / total) * 100)
+            let color = QuotaColorCalculator.shared.color(for: pct)
+
+            Chart {
+                SectorMark(
+                    angle: .value("残り", Double(pct)),
+                    innerRadius: .ratio(0.6),
+                    outerRadius: .ratio(1.0),
+                    angularInset: 1.5
+                )
+                .foregroundStyle(color)
+
+                SectorMark(
+                    angle: .value("使用済み", Double(100 - pct)),
+                    innerRadius: .ratio(0.6),
+                    outerRadius: .ratio(1.0),
+                    angularInset: 1.5
+                )
+                .foregroundStyle(Color.secondary.opacity(0.15))
+            }
+            .frame(width: size, height: size)
+            .chartLegend(.hidden)
+        } else {
+            // データ不足の場合はプレースホルダー
+            Circle()
+                .fill(Color.secondary.opacity(0.3))
+                .frame(width: size, height: size)
+                .overlay {
+                    Image(systemName: "questionmark")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+        }
+    }
+
+    /// 追加インジケーター（省略されたクォータ数を表示）
+    private var moreIndicator: some View {
+        VStack(spacing: 8) {
+            Circle()
+                .fill(Color.secondary.opacity(0.3))
+                .frame(width: 32, height: 32)
+                .overlay {
+                    Text("+\(limits.count - maxCount)")
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
+                }
+
+            Text("その他")
+                .font(.caption2)
+                .foregroundStyle(.secondary.opacity(0.8))
+        }
+        .frame(width: 80)
+        .padding(.vertical, 8)
+    }
+
+    /// 残り量のフォーマット
+    private func formatRemaining(_ value: Double) -> String {
+        if value >= 1_000_000 {
+            return String(format: "%.1fM", value / 1_000_000)
+        } else if value >= 1_000 {
+            return String(format: "%.1fK", value / 1_000)
+        } else {
+            return String(format: "%.0f", value)
+        }
+    }
+
+    /// 使用率に応じた色を返す
+    private func percentageColor(_ pct: Int) -> Color {
+        let remaining = max(100 - pct, 0)
+        return QuotaColorCalculator.shared.color(for: remaining)
+    }
+
+    // MARK: - Equatable
+
+    nonisolated static func == (lhs: SecondaryQuotaView, rhs: SecondaryQuotaView) -> Bool {
+        lhs.limits == rhs.limits && lhs.maxCount == rhs.maxCount
     }
 }
 
-/// セカンダリクォータ用の小型ドーナツチャート
-/// 残り部分をメインの色で塗りつぶします
-struct SecondaryDonutChart: View {
-    /// 使用率（0-100）
-    let percentage: Int
+// MARK: - Preview
 
-    /// サイズ
-    let size: CGFloat
+#Preview("セカンダリクォータ") {
+    SecondaryQuotaView(limits: [
+        UsageLimit(label: "Monthly", pct: 75, used: 750, total: 1000, remaining: 250, resetEpoch: nil),
+        UsageLimit(label: "Daily", pct: 30, used: 30, total: 100, remaining: 70, resetEpoch: nil),
+        UsageLimit(label: "Reader", pct: nil, used: nil, total: 500, remaining: 500, resetEpoch: nil)
+    ])
+    .frame(width: 350)
+    .padding()
+}
 
-    /// 残りパーセンテージ
-    private var remainingPercentage: Int {
-        max(100 - percentage, 0)
-    }
+#Preview("percentageのみ") {
+    SecondaryQuotaView(limits: [
+        UsageLimit(label: "Monthly", pct: 90, used: nil, total: nil, remaining: nil, resetEpoch: nil),
+        UsageLimit(label: "Daily", pct: 45, used: nil, total: nil, remaining: nil, resetEpoch: nil)
+    ])
+    .frame(width: 300)
+    .padding()
+}
 
-    /// 色の決定（残り率に応じて変化）
-    private var chartColor: Color {
-        if remainingPercentage > AppConstants.quotaThresholdHealthy {
-            return AppConstants.Color.SwiftUIColor.healthy
-        } else if remainingPercentage > AppConstants.quotaThresholdWarning {
-            return AppConstants.Color.SwiftUIColor.warning
-        } else {
-            return AppConstants.Color.SwiftUIColor.critical
-        }
-    }
+#Preview("大量のクォータ") {
+    SecondaryQuotaView(limits: [
+        UsageLimit(label: "Monthly", pct: 75, used: 750, total: 1000, remaining: 250, resetEpoch: nil),
+        UsageLimit(label: "Daily", pct: 30, used: 30, total: 100, remaining: 70, resetEpoch: nil),
+        UsageLimit(label: "Reader", pct: 50, used: 50, total: 100, remaining: 50, resetEpoch: nil),
+        UsageLimit(label: "ZRead", pct: 20, used: 20, total: 100, remaining: 80, resetEpoch: nil)
+    ], maxCount: 3)
+    .frame(width: 350)
+    .padding()
+}
 
-    var body: some View {
-        Chart {
-            // 残りセクター（メインの色）
-            SectorMark(
-                angle: .value("残り", Double(remainingPercentage)),
-                innerRadius: .ratio(0.6),
-                outerRadius: .ratio(1.0),
-                angularInset: 1.5
-            )
-            .foregroundStyle(chartColor)
-
-            // 使用済みセクター（薄い色）
-            SectorMark(
-                angle: .value("使用済み", Double(percentage)),
-                innerRadius: .ratio(0.6),
-                outerRadius: .ratio(1.0),
-                angularInset: 1.5
-            )
-            .foregroundStyle(Color.secondary.opacity(0.15))
-        }
-        .frame(width: size, height: size)
-        .chartLegend(.hidden)
-    }
+#Preview("空の状態") {
+    SecondaryQuotaView(limits: [])
+    .frame(width: 300)
+    .padding()
 }

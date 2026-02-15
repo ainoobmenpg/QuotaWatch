@@ -101,10 +101,10 @@ final class PersistenceManagerTests: XCTestCase {
 
     func testSaveAndLoadState() async throws {
         var state = AppState()
-        state.backoffFactor = 4
-        state.lastError = "test error"
-        state.lastKnownResetEpoch = 1737100800
-        state.lastNotifiedResetEpoch = 1737100900
+        state.fetch.backoffFactor = 4
+        state.fetch.lastError = "test error"
+        state.notification.lastKnownResetEpoch = 1737100800
+        state.notification.lastNotifiedResetEpoch = 1737100900
 
         // 保存
         try await sut.saveState(state)
@@ -112,56 +112,56 @@ final class PersistenceManagerTests: XCTestCase {
         // 読み込み
         let loaded = try await sut.loadState()
 
-        XCTAssertEqual(loaded.backoffFactor, 4)
-        XCTAssertEqual(loaded.lastError, "test error")
-        XCTAssertEqual(loaded.lastKnownResetEpoch, 1737100800)
-        XCTAssertEqual(loaded.lastNotifiedResetEpoch, 1737100900)
+        XCTAssertEqual(loaded.fetch.backoffFactor, 4)
+        XCTAssertEqual(loaded.fetch.lastError, "test error")
+        XCTAssertEqual(loaded.notification.lastKnownResetEpoch, 1737100800)
+        XCTAssertEqual(loaded.notification.lastNotifiedResetEpoch, 1737100900)
     }
 
     func testLoadOrDefaultStateWhenFileNotExists() async throws {
         let state = await sut.loadOrDefaultState()
-        XCTAssertEqual(state.backoffFactor, 1)
-        XCTAssertEqual(state.lastError, "")
-        XCTAssertEqual(state.lastKnownResetEpoch, 0)
-        XCTAssertEqual(state.lastNotifiedResetEpoch, 0)
+        XCTAssertEqual(state.fetch.backoffFactor, 1)
+        XCTAssertEqual(state.fetch.lastError, "")
+        XCTAssertEqual(state.notification.lastKnownResetEpoch, 0)
+        XCTAssertEqual(state.notification.lastNotifiedResetEpoch, 0)
     }
 
     func testLoadOrDefaultStateReturnsSavedState() async throws {
         var state = AppState()
-        state.backoffFactor = 8
-        state.lastError = "network failure"
+        state.fetch.backoffFactor = 8
+        state.fetch.lastError = "network failure"
 
         try await sut.saveState(state)
 
         let loaded = await sut.loadOrDefaultState()
-        XCTAssertEqual(loaded.backoffFactor, 8)
-        XCTAssertEqual(loaded.lastError, "network failure")
+        XCTAssertEqual(loaded.fetch.backoffFactor, 8)
+        XCTAssertEqual(loaded.fetch.lastError, "network failure")
     }
 
     func testDeleteState() async throws {
         var state = AppState()
-        state.backoffFactor = 2
+        state.fetch.backoffFactor = 2
 
         try await sut.saveState(state)
         try await sut.deleteState()
 
         // 削除後はデフォルト値を返す
         let loaded = await sut.loadOrDefaultState()
-        XCTAssertEqual(loaded.backoffFactor, 1)
+        XCTAssertEqual(loaded.fetch.backoffFactor, 1)
     }
 
     // MARK: - コルーチン解除
 
     func testSaveAndLoadStateWithoutAsync() async throws {
         var state = AppState()
-        state.backoffFactor = 3
-        state.lastError = "async test"
+        state.fetch.backoffFactor = 3
+        state.fetch.lastError = "async test"
 
         try await sut.saveState(state)
         let loaded = try await sut.loadState()
 
-        XCTAssertEqual(loaded.backoffFactor, 3)
-        XCTAssertEqual(loaded.lastError, "async test")
+        XCTAssertEqual(loaded.fetch.backoffFactor, 3)
+        XCTAssertEqual(loaded.fetch.lastError, "async test")
     }
 
     // MARK: - 破損データテスト
@@ -191,11 +191,11 @@ final class PersistenceManagerTests: XCTestCase {
 
         // 破損データでもloadStateはデフォルト値を返す（実装の仕様）
         let loaded = try await sut.loadState()
-        XCTAssertEqual(loaded.backoffFactor, 1)
+        XCTAssertEqual(loaded.fetch.backoffFactor, 1)
 
         // loadOrDefaultStateもデフォルト値を返す
         let defaultLoaded = await sut.loadOrDefaultState()
-        XCTAssertEqual(defaultLoaded.backoffFactor, 1)
+        XCTAssertEqual(defaultLoaded.fetch.backoffFactor, 1)
     }
 
     // MARK: - Atomic Writeテスト

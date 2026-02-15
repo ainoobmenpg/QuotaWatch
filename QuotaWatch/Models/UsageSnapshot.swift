@@ -171,14 +171,14 @@ public struct QuotaLimit: Codable, Sendable {
     /// 使用率（%）、APIによっては返されない場合あり
     public let percentage: Double?
 
-    /// 使用量
-    public let usage: Double
+    /// 使用量（APIによっては返されない場合あり）
+    public let usage: Double?
 
     /// 上限
     public let number: Double
 
-    /// 残り
-    public let remaining: Double
+    /// 残り（APIによっては返されない場合あり）
+    public let remaining: Double?
 
     /// 次回リセット時刻（epoch秒/ミリ秒 or ISO8601文字列）
     /// セカンダリクォータ等ではnilになる場合あり
@@ -187,9 +187,9 @@ public struct QuotaLimit: Codable, Sendable {
     public init(
         type: String,
         percentage: Double?,
-        usage: Double,
+        usage: Double?,
         number: Double,
-        remaining: Double,
+        remaining: Double?,
         nextResetTime: ResetTimeValue?
     ) {
         self.type = type
@@ -295,15 +295,20 @@ public func normalizeResetTime(_ value: ResetTimeValue?) -> Int? {
 ///
 /// - Parameters:
 ///   - percentage: APIから返されたpercentage値（あれば）
-///   - usage: 使用量
+///   - usage: 使用量（オプショナル）
 ///   - total: 上限
-/// - Returns: 使用率（0-100の整数）
-public func calculatePercentage(percentage: Double?, usage: Double, total: Double) -> Int {
+/// - Returns: 使用率（0-100の整数）、計算できない場合はnil
+public func calculatePercentage(percentage: Double?, usage: Double?, total: Double) -> Int? {
+    // percentageフィールドがあればそれを使用
     if let pct = percentage {
         return Int(floor(pct))
     }
+    // usageがない場合は計算不可
+    guard let usage = usage else {
+        return nil
+    }
     guard total > 0 else {
-        return 0
+        return nil
     }
     return Int(floor(100 * usage / total))
 }
