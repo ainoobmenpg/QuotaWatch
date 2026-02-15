@@ -198,9 +198,9 @@ private struct OuterRingView: View {
                     lineWidth: ringWidth
                 )
 
-            // 進捗リング
+            // 進捗リング（1.0の場合は0.999にクランプして描画問題を回避）
             Circle()
-                .trim(from: 0, to: progress)
+                .trim(from: 0, to: min(progress, 0.999))
                 .stroke(
                     progressColor,
                     style: StrokeStyle(lineWidth: ringWidth, lineCap: .round)
@@ -229,9 +229,9 @@ private struct InnerDonutView: View {
                     lineWidth: ringWidth
                 )
 
-            // 進捗ドーナツ
+            // 進捗ドーナツ（1.0の場合は0.999にクランプして描画問題を回避）
             Circle()
-                .trim(from: 0, to: progress)
+                .trim(from: 0, to: min(progress, 0.999))
                 .stroke(
                     color,
                     style: StrokeStyle(lineWidth: ringWidth, lineCap: .round)
