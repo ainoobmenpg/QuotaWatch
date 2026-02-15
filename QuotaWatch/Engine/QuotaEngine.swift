@@ -377,6 +377,12 @@ public actor QuotaEngine: QuotaEngineProtocol {
         // 最終フェッチ時刻を更新
         state.lastFetchEpoch = Date().epochSeconds
 
+        // リセット時刻を更新（ResetNotifier用）
+        if let resetEpoch = snapshot.resetEpoch {
+            state.lastKnownResetEpoch = resetEpoch
+            await loggerManager.log("リセット時刻更新: epoch=\(resetEpoch)", category: "FETCH")
+        }
+
         await loggerManager.log("フェッチ成功: \(snapshot.primaryTitle)", category: "FETCH")
 
         // UI更新通知（AsyncStream経由）
