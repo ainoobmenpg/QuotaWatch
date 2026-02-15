@@ -118,7 +118,7 @@
 		A477064C7DA7510D89D89717 /* QuotaEngineRunLoopTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaEngineRunLoopTests.swift; sourceTree = "<group>"; };
 		A548E70E2C864393B57BB96E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A8E7010C302908F9B1559BBD /* UsageSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageSnapshot.swift; sourceTree = "<group>"; };
-		A94D7B4630B5FE77C49638C6 /* MockQuotaEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockQuotaEngine.swift; sourceTree = "<group>"; };
+		A94D7B4630B5FE77C49638C6 /* MockQuotaEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaWatchTests/Helpers/MockQuotaEngine.swift; sourceTree = "<group>"; };
 		B064591AAE2355CCA319412F /* ResetNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResetNotifier.swift; sourceTree = "<group>"; };
 		B6740B4863A79219FF9807EE /* EngineStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EngineStateTests.swift; sourceTree = "<group>"; };
 		B84EC1BAEA92871ACC4886F5 /* BackoffDecision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackoffDecision.swift; sourceTree = "<group>"; };
@@ -161,7 +161,7 @@
 			children = (
 				A94D7B4630B5FE77C49638C6 /* MockQuotaEngine.swift */,
 			);
-			path = Helpers;
+			path = QuotaWatchTests/Helpers;
 			sourceTree = "<group>";
 		};
 		10EB4A4742B4137236AB9CFD /* QuotaWatchTests */ = {
@@ -318,7 +318,6 @@
 			isa = PBXGroup;
 			children = (
 				F640ED5CE98794ECBC416955 /* ContentViewModelTests.swift */,
-				06CCCD9C8A901D9FA60A116F /* Helpers */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
