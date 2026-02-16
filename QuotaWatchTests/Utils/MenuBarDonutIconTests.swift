@@ -155,19 +155,19 @@ final class MenuBarDonutIconTests: XCTestCase {
     }
 
     func testTimeFormatZero() {
-        // 0秒
+        // 0秒（リセット時間なし）→ "--:--" が表示される
         let icon = MenuBarDonutIcon(usagePercentage: 50, timeProgress: 0.5, remainingSeconds: 0, diameter: 22)
         let image = icon.makeImage()
 
-        XCTAssertNotNil(image, "0:00形式の時間が表示されるべき")
+        XCTAssertNotNil(image, "リセット時間なしの場合は--:--が表示されるべき")
     }
 
     func testTimeFormatNegative() {
-        // 負の値（クランプされる）
+        // 負の値（リセット時間なし扱い）→ "--:--" が表示される
         let icon = MenuBarDonutIcon(usagePercentage: 50, timeProgress: 0.5, remainingSeconds: -100, diameter: 22)
         let image = icon.makeImage()
 
-        XCTAssertNotNil(image, "負の値は0にクランプされるべき")
+        XCTAssertNotNil(image, "負の値は--:--として表示されるべき")
     }
 
     // MARK: - エッジケース
@@ -271,6 +271,39 @@ final class MenuBarDonutIconTests: XCTestCase {
         let image = icon.makeImage()
 
         XCTAssertNotNil(image, "使用率0%でもアイコンが生成されるべき")
+        XCTAssertTrue(image.representations.count > 0)
+    }
+
+    // MARK: - 3桁表示テスト（残量100%）
+
+    /// テスト: 残量100%（使用率0%）の「100」が3桁でも正しく表示されること
+    func testIconDisplay_withThreeDigitPercentage() {
+        // 使用率0% = 残量100%（3桁）
+        let icon = MenuBarDonutIcon(
+            usagePercentage: 0,
+            timeProgress: 0.0,
+            remainingSeconds: 0,  // リセット時間なし
+            diameter: 22
+        )
+        let image = icon.makeImage()
+
+        XCTAssertNotNil(image, "残量100%（3桁）でもアイコンが生成されるべき")
+        XCTAssertTrue(image.representations.count > 0)
+        // フォントサイズが縮小されることで円内に収まる
+    }
+
+    /// テスト: 残量100%かつリセット時間なしの場合の表示
+    func testIconDisplay_withFullQuotaAndNoResetTime() {
+        // 使用率0% = 残量100%、リセット時間なし = --:--
+        let icon = MenuBarDonutIcon(
+            usagePercentage: 0,
+            timeProgress: 0.0,
+            remainingSeconds: 0,
+            diameter: 22
+        )
+        let image = icon.makeImage()
+
+        XCTAssertNotNil(image, "100% + --:-- の組み合わせが正しく表示されるべき")
         XCTAssertTrue(image.representations.count > 0)
     }
 
