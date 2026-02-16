@@ -33,3 +33,7 @@ Pods/
 build/
 *.xcarchive/
 DerivedData/
+
+# Node.js
+node_modules/
+dist/
