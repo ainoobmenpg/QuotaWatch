@@ -91,13 +91,17 @@ public struct UsageLimit: Codable, Equatable, Sendable, Identifiable {
     /// リセット時刻（epoch秒）
     public let resetEpoch: Int?
 
+    /// MCPサービスごとの使用量内訳（TIME_LIMIT等で使用）
+    public let usageDetails: [UsageDetail]
+
     public init(
         label: String,
         pct: Int?,
         used: Double?,
         total: Double?,
         remaining: Double?,
-        resetEpoch: Int?
+        resetEpoch: Int?,
+        usageDetails: [UsageDetail] = []
     ) {
         self.label = label
         self.pct = pct
@@ -105,12 +109,13 @@ public struct UsageLimit: Codable, Equatable, Sendable, Identifiable {
         self.total = total
         self.remaining = remaining
         self.resetEpoch = resetEpoch
+        self.usageDetails = usageDetails
     }
 
     // MARK: - Codable
 
     enum CodingKeys: String, CodingKey {
-        case label, pct, used, total, remaining, resetEpoch
+        case label, pct, used, total, remaining, resetEpoch, usageDetails
     }
 }
 
@@ -184,13 +189,17 @@ public struct QuotaLimit: Codable, Sendable {
     /// セカンダリクォータ等ではnilになる場合あり
     public let nextResetTime: ResetTimeValue?
 
+    /// MCPサービスごとの使用量内訳（TIME_LIMIT等で使用）
+    public let usageDetails: [UsageDetail]?
+
     public init(
         type: String,
         percentage: Double?,
         usage: Double?,
         number: Double,
         remaining: Double?,
-        nextResetTime: ResetTimeValue?
+        nextResetTime: ResetTimeValue?,
+        usageDetails: [UsageDetail]? = nil
     ) {
         self.type = type
         self.percentage = percentage
@@ -198,6 +207,7 @@ public struct QuotaLimit: Codable, Sendable {
         self.number = number
         self.remaining = remaining
         self.nextResetTime = nextResetTime
+        self.usageDetails = usageDetails
     }
 }
 
@@ -263,6 +273,45 @@ public struct ErrorResponse: Codable, Sendable, Equatable {
     public init(code: Int?, message: String?) {
         self.code = code
         self.message = message
+    }
+}
+
+// MARK: - 使用量詳細（MCPサービス内訳）
+
+/// MCPサービスごとの使用量詳細
+public struct UsageDetail: Codable, Sendable, Equatable, Identifiable {
+    /// 一意識別子（Codableには含まれない）
+    public let id = UUID()
+
+    /// モデル/サービスコード（例: "search-prime", "web-reader", "zread"）
+    public let modelCode: String
+
+    /// 使用量
+    public let usage: Int
+
+    public init(modelCode: String, usage: Int) {
+        self.modelCode = modelCode
+        self.usage = usage
+    }
+
+    // MARK: - Codable
+
+    enum CodingKeys: String, CodingKey {
+        case modelCode, usage
+    }
+}
+
+/// UsageDetailの表示用ラベルを生成
+public func formatUsageDetailLabel(_ modelCode: String) -> String {
+    switch modelCode.lowercased() {
+    case "search-prime":
+        return "Search"
+    case "web-reader":
+        return "Reader"
+    case "zread":
+        return "Zread"
+    default:
+        return modelCode
     }
 }
 
@@ -423,7 +472,8 @@ extension UsageSnapshot {
                 used: limit.usage,
                 total: limit.number,
                 remaining: limit.remaining,
-                resetEpoch: normalizeResetTime(limit.nextResetTime)
+                resetEpoch: normalizeResetTime(limit.nextResetTime),
+                usageDetails: limit.usageDetails ?? []
             )
         }
 
