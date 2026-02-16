@@ -271,7 +271,7 @@ final class MenuBarController: ObservableObject {
             remainingSeconds = 0
         }
 
-        // NSImage を直接生成（Phase 6: 2つ並び）
+        // NSImage を直接生成
         let icon = MenuBarDonutIcon(
             usagePercentage: pct,
             timeProgress: timeProg,
