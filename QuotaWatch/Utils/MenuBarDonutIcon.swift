@@ -102,18 +102,22 @@ struct MenuBarDonutIcon {
     // MARK: - 時間フォーマット
 
     /// 残り秒数を H:MM または M:SS 形式にフォーマット
+    /// - Parameter seconds: 残り秒数（0以下の場合は「--:--」を返す）
     private func formatRemainingTime(_ seconds: Int) -> String {
-        let clampedSeconds = max(0, seconds)
+        // リセット時間が存在しない場合は「--:--」を表示
+        guard seconds > 0 else {
+            return "--:--"
+        }
 
-        if clampedSeconds >= 3600 {
+        if seconds >= 3600 {
             // 1時間以上: H:MM 形式
-            let hours = clampedSeconds / 3600
-            let minutes = (clampedSeconds % 3600) / 60
+            let hours = seconds / 3600
+            let minutes = (seconds % 3600) / 60
             return String(format: "%d:%02d", hours, minutes)
         } else {
             // 1時間未満: M:SS 形式
-            let minutes = clampedSeconds / 60
-            let secs = clampedSeconds % 60
+            let minutes = seconds / 60
+            let secs = seconds % 60
             return String(format: "%d:%02d", minutes, secs)
         }
     }
@@ -148,7 +152,14 @@ private struct UnifiedIconView: View {
     private var innerDonutWidth: CGFloat { size * 0.08 }
 
     /// 数字のフォントサイズ（余裕を持たせて視認性向上）
-    private var fontSize: CGFloat { size * 0.38 }
+    /// 3桁以上の場合は縮小して円内に収める
+    private var fontSize: CGFloat {
+        let baseSize = size * 0.38
+        if displayText.count >= 3 {
+            return baseSize * 0.75  // 3桁以上は75%に縮小
+        }
+        return baseSize
+    }
 
     var body: some View {
         ZStack {
