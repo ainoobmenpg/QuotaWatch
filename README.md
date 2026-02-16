@@ -159,19 +159,19 @@ xcodebuild test -scheme QuotaWatch -destination 'platform=macOS'
 
 ## 設計ドキュメント
 
-詳細な設計情報は `quota-watch-menubar-docs/` を参照してください（**設計書のアーカイブ**）。
+詳細な設計情報は `docs-archive/` を参照してください（**設計書のアーカイブ**）。
 
-- [全体概要](quota-watch-menubar-docs/docs/00_overview.md)
-- [アーキテクチャ](quota-watch-menubar-docs/docs/02_architecture.md)
-- [データモデル](quota-watch-menubar-docs/docs/03_data_model.md)
-- [ネットワークとAPI](quota-watch-menubar-docs/docs/04_networking_api.md)
-- [スケジューリングとバックオフ](quota-watch-menubar-docs/docs/05_backoff_and_scheduler.md)
-- [通知仕様](quota-watch-menubar-docs/docs/06_notifications.md)
-- [セキュリティ](quota-watch-menubar-docs/docs/07_security_keychain.md)
-- [UI/UX設計](quota-watch-menubar-docs/docs/08_ui_ux.md)
-- [永続化](quota-watch-menubar-docs/docs/09_persistence.md)
-- [常駐設定](quota-watch-menubar-docs/docs/10_login_item.md)
-- [テスト計画](quota-watch-menubar-docs/docs/11_testing.md)
+- [全体概要](docs-archive/docs/00_overview.md)
+- [アーキテクチャ](docs-archive/docs/02_architecture.md)
+- [データモデル](docs-archive/docs/03_data_model.md)
+- [ネットワークとAPI](docs-archive/docs/04_networking_api.md)
+- [スケジューリングとバックオフ](docs-archive/docs/05_backoff_and_scheduler.md)
+- [通知仕様](docs-archive/docs/06_notifications.md)
+- [セキュリティ](docs-archive/docs/07_security_keychain.md)
+- [UI/UX設計](docs-archive/docs/08_ui_ux.md)
+- [永続化](docs-archive/docs/09_persistence.md)
+- [常駐設定](docs-archive/docs/10_login_item.md)
+- [テスト計画](docs-archive/docs/11_testing.md)
 
 ## ライセンス
 
