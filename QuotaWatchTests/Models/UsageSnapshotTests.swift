@@ -507,4 +507,117 @@ final class UsageSnapshotTests: XCTestCase {
     private struct ResetTimeContainer: Codable {
         let nextResetTime: ResetTimeValue
     }
+
+    // MARK: - 境界値テスト
+
+    /// テスト: 全てのOptionalフィールドがnilのUsageSnapshot
+    func testUsageSnapshot_withAllNilOptionals() throws {
+        let snapshot = UsageSnapshot(
+            providerId: "test",
+            fetchedAtEpoch: Int(Date().timeIntervalSince1970),
+            primaryTitle: "Test",
+            primaryPct: nil,
+            primaryUsed: nil,
+            primaryTotal: nil,
+            primaryRemaining: nil,
+            resetEpoch: nil,
+            secondary: [],
+            rawDebugJson: nil
+        )
+
+        XCTAssertNil(snapshot.primaryPct)
+        XCTAssertNil(snapshot.primaryUsed)
+        XCTAssertNil(snapshot.primaryTotal)
+        XCTAssertNil(snapshot.primaryRemaining)
+        XCTAssertNil(snapshot.resetEpoch)
+        XCTAssertEqual(snapshot.secondary.count, 0)
+    }
+
+    /// テスト: 全ての値が0のUsageSnapshot
+    func testUsageSnapshot_withZeroValues() throws {
+        let snapshot = UsageSnapshot(
+            providerId: "test",
+            fetchedAtEpoch: 0,
+            primaryTitle: "Test",
+            primaryPct: 0,
+            primaryUsed: 0.0,
+            primaryTotal: 0.0,
+            primaryRemaining: 0.0,
+            resetEpoch: 0,
+            secondary: [],
+            rawDebugJson: nil
+        )
+
+        XCTAssertEqual(snapshot.fetchedAtEpoch, 0)
+        XCTAssertEqual(snapshot.primaryPct, 0)
+        XCTAssertEqual(snapshot.primaryUsed, 0.0)
+        XCTAssertEqual(snapshot.primaryTotal, 0.0)
+        XCTAssertEqual(snapshot.primaryRemaining, 0.0)
+        XCTAssertEqual(snapshot.resetEpoch, 0)
+    }
+
+    /// テスト: resetEpochが0（1970年1月1日）のUsageSnapshot
+    func testUsageSnapshot_withResetEpochZero() throws {
+        let snapshot = UsageSnapshot(
+            providerId: "test",
+            fetchedAtEpoch: Int(Date().timeIntervalSince1970),
+            primaryTitle: "Test",
+            primaryPct: 50,
+            primaryUsed: 50.0,
+            primaryTotal: 100.0,
+            primaryRemaining: 50.0,
+            resetEpoch: 0,  // 1970年1月1日（エポック開始）
+            secondary: [],
+            rawDebugJson: nil
+        )
+
+        XCTAssertEqual(snapshot.resetEpoch, 0)
+    }
+
+    /// テスト: 使用率100%のUsageSnapshot
+    func testUsageSnapshot_with100PercentUsage() throws {
+        let snapshot = UsageSnapshot(
+            providerId: "test",
+            fetchedAtEpoch: Int(Date().timeIntervalSince1970),
+            primaryTitle: "Test",
+            primaryPct: 100,
+            primaryUsed: 100.0,
+            primaryTotal: 100.0,
+            primaryRemaining: 0.0,
+            resetEpoch: Int(Date().timeIntervalSince1970) + 3600,
+            secondary: [],
+            rawDebugJson: nil
+        )
+
+        XCTAssertEqual(snapshot.primaryPct, 100)
+        XCTAssertEqual(snapshot.primaryRemaining, 0.0)
+    }
+
+    /// テスト: Codableで全てnilのUsageSnapshotを正しくエンコード/デコード
+    func testUsageSnapshot_withAllNilOptionals_Codable() throws {
+        let snapshot = UsageSnapshot(
+            providerId: "test",
+            fetchedAtEpoch: 1737100800,
+            primaryTitle: "Test",
+            primaryPct: nil,
+            primaryUsed: nil,
+            primaryTotal: nil,
+            primaryRemaining: nil,
+            resetEpoch: nil,
+            secondary: [],
+            rawDebugJson: nil
+        )
+
+        let data = try JSONEncoder().encode(snapshot)
+        let decoded = try decoder.decode(UsageSnapshot.self, from: data)
+
+        XCTAssertEqual(decoded.providerId, "test")
+        XCTAssertEqual(decoded.fetchedAtEpoch, 1737100800)
+        XCTAssertEqual(decoded.primaryTitle, "Test")
+        XCTAssertNil(decoded.primaryPct)
+        XCTAssertNil(decoded.primaryUsed)
+        XCTAssertNil(decoded.primaryTotal)
+        XCTAssertNil(decoded.primaryRemaining)
+        XCTAssertNil(decoded.resetEpoch)
+    }
 }

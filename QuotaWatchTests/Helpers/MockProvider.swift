@@ -25,6 +25,12 @@ public final class MockProvider: @unchecked Sendable, Provider {
     public var shouldThrowNetworkError = false
     public var fetchDelay: TimeInterval? = nil
 
+    /// 返却するスナップショットのresetEpochを制御（nilの場合は現在時刻+5時間）
+    public var mockResetEpoch: Int? = nil
+
+    /// 返却するスナップショットのprimaryPctを制御
+    public var mockPrimaryPct: Int? = 50
+
     // MARK: - Providerプロトコル実装
 
     public func fetchUsage(apiKey: String) async throws -> UsageSnapshot {
@@ -43,15 +49,16 @@ public final class MockProvider: @unchecked Sendable, Provider {
         }
 
         // 成功時はダミーのスナップショットを返す
+        // resetEpochはmockResetEpochの値をそのまま使用（nilの場合はnil）
         return UsageSnapshot(
             providerId: "mock",
             fetchedAtEpoch: Int(Date().timeIntervalSince1970),
             primaryTitle: "Mock Quota",
-            primaryPct: 50,
-            primaryUsed: 50.0,
+            primaryPct: mockPrimaryPct,
+            primaryUsed: Double(mockPrimaryPct ?? 0),
             primaryTotal: 100.0,
-            primaryRemaining: 50.0,
-            resetEpoch: nil,
+            primaryRemaining: 100.0 - Double(mockPrimaryPct ?? 0),
+            resetEpoch: mockResetEpoch,
             secondary: [],
             rawDebugJson: nil
         )
@@ -88,5 +95,15 @@ public final class MockProvider: @unchecked Sendable, Provider {
     /// フェッチカウンターをリセット
     public func resetFetchCount() {
         fetchCount = 0
+    }
+
+    /// 返却するresetEpochを設定（nilでリセット時刻なし）
+    public func setMockResetEpoch(_ epoch: Int?) {
+        mockResetEpoch = epoch
+    }
+
+    /// 返却するprimaryPctを設定
+    public func setMockPrimaryPct(_ pct: Int?) {
+        mockPrimaryPct = pct
     }
 }

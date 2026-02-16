@@ -229,4 +229,104 @@ final class MenuBarDonutIconTests: XCTestCase {
         XCTAssertGreaterThan(image.size.width, 22)
         XCTAssertEqual(image.size.height, 22)
     }
+
+    // MARK: - 境界値テスト（バグ防止）
+
+    /// テスト: 残り秒数が0でもアイコンが正常に生成されること
+    func testIconDisplay_whenRemainingSecondsIsZero() {
+        let icon = MenuBarDonutIcon(
+            usagePercentage: 50,
+            timeProgress: 1.0,
+            remainingSeconds: 0,
+            diameter: 22
+        )
+        let image = icon.makeImage()
+
+        XCTAssertNotNil(image, "残り秒数0でもアイコンが生成されるべき")
+        XCTAssertTrue(image.representations.count > 0)
+    }
+
+    /// テスト: 使用率100%でもアイコンが正常に生成されること
+    func testIconDisplay_whenUsagePercentageIs100() {
+        let icon = MenuBarDonutIcon(
+            usagePercentage: 100,
+            timeProgress: 0.5,
+            remainingSeconds: 1800,
+            diameter: 22
+        )
+        let image = icon.makeImage()
+
+        XCTAssertNotNil(image, "使用率100%でもアイコンが生成されるべき")
+        XCTAssertTrue(image.representations.count > 0)
+    }
+
+    /// テスト: 使用率0%でもアイコンが正常に生成されること
+    func testIconDisplay_whenUsagePercentageIsZero() {
+        let icon = MenuBarDonutIcon(
+            usagePercentage: 0,
+            timeProgress: 0.5,
+            remainingSeconds: 1800,
+            diameter: 22
+        )
+        let image = icon.makeImage()
+
+        XCTAssertNotNil(image, "使用率0%でもアイコンが生成されるべき")
+        XCTAssertTrue(image.representations.count > 0)
+    }
+
+    /// テスト: 時間進捗0%でもアイコンが正常に生成されること
+    func testIconDisplay_whenTimeProgressIsZero() {
+        let icon = MenuBarDonutIcon(
+            usagePercentage: 50,
+            timeProgress: 0.0,
+            remainingSeconds: 18000,
+            diameter: 22
+        )
+        let image = icon.makeImage()
+
+        XCTAssertNotNil(image, "時間進捗0%でもアイコンが生成されるべき")
+        XCTAssertTrue(image.representations.count > 0)
+    }
+
+    /// テスト: 時間進捗100%でもアイコンが正常に生成されること
+    func testIconDisplay_whenTimeProgressIsOneHundred() {
+        let icon = MenuBarDonutIcon(
+            usagePercentage: 50,
+            timeProgress: 1.0,
+            remainingSeconds: 0,
+            diameter: 22
+        )
+        let image = icon.makeImage()
+
+        XCTAssertNotNil(image, "時間進捗100%でもアイコンが生成されるべき")
+        XCTAssertTrue(image.representations.count > 0)
+    }
+
+    /// テスト: 全てのパラメータが最小値でもアイコンが正常に生成されること
+    func testIconDisplay_withAllMinimumValues() {
+        let icon = MenuBarDonutIcon(
+            usagePercentage: 0,
+            timeProgress: 0.0,
+            remainingSeconds: 0,
+            diameter: 16  // 最小直径
+        )
+        let image = icon.makeImage()
+
+        XCTAssertNotNil(image, "全て最小値でもアイコンが生成されるべき")
+        XCTAssertEqual(image.size.height, 16)
+    }
+
+    /// テスト: 全てのパラメータが最大境界でもアイコンが正常に生成されること
+    func testIconDisplay_withMaximumBoundaryValues() {
+        let icon = MenuBarDonutIcon(
+            usagePercentage: 100,
+            timeProgress: 1.0,
+            remainingSeconds: 86400,  // 1日（最大想定）
+            diameter: 22
+        )
+        let image = icon.makeImage()
+
+        XCTAssertNotNil(image, "最大境界値でもアイコンが生成されるべき")
+        XCTAssertTrue(image.representations.count > 0)
+    }
 }
