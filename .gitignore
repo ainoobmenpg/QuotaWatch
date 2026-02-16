@@ -18,6 +18,9 @@ Pods/
 # Claude Code（ユーザーローカル設定）
 .claude/
 
+# Claude Code Harness（ローカルツールバージョン）
+.claude-code-harness-version
+
 # その他
 *.swp
 *~
