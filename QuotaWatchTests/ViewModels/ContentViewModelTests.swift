@@ -211,4 +211,104 @@ final class ContentViewModelTests: XCTestCase {
 
         XCTAssertEqual(viewModel.snapshot?.primaryTitle, "Updated")
     }
+
+    // MARK: - 境界値テスト（バグ防止）
+
+    /// テスト: resetEpochがnilの場合でもmenuBarTitleが正しく表示されること
+    func testMenuBarTitle_whenResetEpochIsNil() async throws {
+        // resetEpochがnilのスナップショット
+        let testSnapshot = UsageSnapshot(
+            providerId: "mock",
+            fetchedAtEpoch: Int(Date().timeIntervalSince1970),
+            primaryTitle: "GLM 5h",
+            primaryPct: 50,
+            primaryUsed: 50.0,
+            primaryTotal: 100.0,
+            primaryRemaining: 50.0,
+            resetEpoch: nil,  // resetEpochがnil
+            secondary: [],
+            rawDebugJson: nil
+        )
+        await mockEngine.setSnapshot(testSnapshot)
+
+        await viewModel.loadInitialData()
+
+        // タイトルが更新されることを待機
+        try await awaitCondition(timeout: 0.5) {
+            self.viewModel.menuBarTitle.contains("GLM 5h")
+        }
+
+        XCTAssertFalse(viewModel.menuBarTitle.isEmpty, "resetEpochがnilでもタイトルが表示されるべき")
+        XCTAssertTrue(viewModel.menuBarTitle.contains("GLM 5h"))
+        XCTAssertTrue(viewModel.menuBarTitle.contains("50%"))
+    }
+
+    /// テスト: primaryPctがnilの場合、menuBarTitleはタイトルのみ表示
+    func testMenuBarTitle_whenPrimaryPctIsNil() async throws {
+        // primaryPctがnilのスナップショット
+        let testSnapshot = UsageSnapshot(
+            providerId: "mock",
+            fetchedAtEpoch: Int(Date().timeIntervalSince1970),
+            primaryTitle: "Loading",
+            primaryPct: nil,  // primaryPctがnil
+            primaryUsed: nil,
+            primaryTotal: nil,
+            primaryRemaining: nil,
+            resetEpoch: nil,
+            secondary: [],
+            rawDebugJson: nil
+        )
+        await mockEngine.setSnapshot(testSnapshot)
+
+        await viewModel.loadInitialData()
+
+        // タイトルが更新されることを待機
+        try await awaitCondition(timeout: 0.5) {
+            self.viewModel.snapshot?.primaryTitle == "Loading"
+        }
+
+        // menuBarTitleが更新されるのを待機
+        try await awaitCondition(timeout: 0.5) {
+            self.viewModel.menuBarTitle.contains("Loading")
+        }
+
+        // primaryPctがない場合はタイトルのみ表示（パーセントなし）
+        XCTAssertFalse(viewModel.menuBarTitle.isEmpty)
+        XCTAssertTrue(viewModel.menuBarTitle.contains("Loading"))
+        XCTAssertFalse(viewModel.menuBarTitle.contains("%"), "パーセント記号が含まれていないべき")
+    }
+
+    /// テスト: snapshotがnilの場合、menuBarTitleは"..."を表示
+    func testMenuBarTitle_whenSnapshotIsNil() async throws {
+        // snapshotを設定しない（nilのまま）
+        await viewModel.loadInitialData()
+
+        // 初期状態では"..."が表示される
+        XCTAssertEqual(viewModel.menuBarTitle, "...")
+    }
+
+    /// テスト: 使用率100%でも正しく表示されること
+    func testMenuBarTitle_with100PercentUsage() async throws {
+        let testSnapshot = UsageSnapshot(
+            providerId: "mock",
+            fetchedAtEpoch: Int(Date().timeIntervalSince1970),
+            primaryTitle: "GLM 5h",
+            primaryPct: 100,
+            primaryUsed: 100.0,
+            primaryTotal: 100.0,
+            primaryRemaining: 0.0,
+            resetEpoch: Int(Date().timeIntervalSince1970) + 3600,
+            secondary: [],
+            rawDebugJson: nil
+        )
+        await mockEngine.setSnapshot(testSnapshot)
+
+        await viewModel.loadInitialData()
+
+        try await awaitCondition(timeout: 0.5) {
+            self.viewModel.menuBarTitle.contains("100%")
+        }
+
+        XCTAssertTrue(viewModel.menuBarTitle.contains("100%"))
+    }
 }

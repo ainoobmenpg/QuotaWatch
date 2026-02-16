@@ -67,6 +67,9 @@
 		FF12AB34CD56EF7890123456 /* QuotaCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF12AB34CD56EF7890123457 /* QuotaCard.swift */; };
 		A1B2C3D4E5F6789012345678 /* QuotaCardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6789012345679 /* QuotaCardTests.swift */; };
 		B2C3D4E5F6789012345678901 /* QuotaAnimationsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6789012345678902 /* QuotaAnimationsTests.swift */; };
+		1A2B3C4D5E6F7890ABCDEF06 /* MenuBarControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A2B3C4D5E6F7890ABCDEF05 /* MenuBarControllerTests.swift */; };
+		2B3C4D5E6F7890ABCDEF0125 /* ResetNotificationIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B3C4D5E6F7890ABCDEF0124 /* ResetNotificationIntegrationTests.swift */; };
+		8A9B0C1D2E3F4567890ABCDF /* MockNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A9B0C1D2E3F4567890ABCDE /* MockNotificationManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -145,6 +148,9 @@
 		FF12AB34CD56EF7890123457 /* QuotaCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaCard.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6789012345679 /* QuotaCardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaCardTests.swift; sourceTree = "<group>"; };
 		B2C3D4E5F6789012345678902 /* QuotaAnimationsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaAnimationsTests.swift; sourceTree = "<group>"; };
+		8A9B0C1D2E3F4567890ABCDE /* MockNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockNotificationManager.swift; sourceTree = "<group>"; };
+		1A2B3C4D5E6F7890ABCDEF05 /* MenuBarControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarControllerTests.swift; sourceTree = "<group>"; };
+		2B3C4D5E6F7890ABCDEF0124 /* ResetNotificationIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResetNotificationIntegrationTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -181,6 +187,7 @@
 			children = (
 				77AF032198079B03D6BAD5D8 /* Info.plist */,
 				3546B1747CA1F380715427BB /* Helpers */,
+				3B4C5D6E7890ABCDEF012345 /* Controllers */,
 				AD69CEC7528DD00C14F923B9 /* Managers */,
 				F42DFA1EB2F45BAE92106AA2 /* Models */,
 				EB522D17D056F7A5D89F9936 /* Providers */,
@@ -191,6 +198,14 @@
 				6AAFC47E2F1E277A00A022F2 /* Integration */,
 			);
 			path = QuotaWatchTests;
+			sourceTree = "<group>";
+		};
+		3B4C5D6E7890ABCDEF012345 /* Controllers */ = {
+			isa = PBXGroup;
+			children = (
+				1A2B3C4D5E6F7890ABCDEF05 /* MenuBarControllerTests.swift */,
+			);
+			path = Controllers;
 			sourceTree = "<group>";
 		};
 		2709B3D7EF05695939321623 /* Utils */ = {
@@ -217,6 +232,8 @@
 			isa = PBXGroup;
 			children = (
 				7224E17B2A0B81D84F3FF33D /* MockProvider.swift */,
+				A94D7B4630B5FE77C49638C6 /* MockQuotaEngine.swift */,
+				8A9B0C1D2E3F4567890ABCDE /* MockNotificationManager.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -246,6 +263,7 @@
 			children = (
 				6AAFC47C2F1E277A00A022F2 /* EdgeCaseIntegrationTests.swift */,
 				6AAFC47D2F1E277A00A022F2 /* SleepWakeIntegrationTests.swift */,
+				2B3C4D5E6F7890ABCDEF0124 /* ResetNotificationIntegrationTests.swift */,
 			);
 			path = Integration;
 			sourceTree = "<group>";
@@ -352,7 +370,6 @@
 			isa = PBXGroup;
 			children = (
 				F640ED5CE98794ECBC416955 /* ContentViewModelTests.swift */,
-				06CCCD9C8A901D9FA60A116F /* Helpers */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -544,6 +561,9 @@
 			D1E2F3A4B5C6D7E8F9012345 /* MenuBarDonutIconTests.swift in Sources */,
 			A1B2C3D4E5F6789012345678 /* QuotaCardTests.swift in Sources */,
 			B2C3D4E5F6789012345678901 /* QuotaAnimationsTests.swift in Sources */,
+			1A2B3C4D5E6F7890ABCDEF06 /* MenuBarControllerTests.swift in Sources */,
+			2B3C4D5E6F7890ABCDEF0125 /* ResetNotificationIntegrationTests.swift in Sources */,
+			8A9B0C1D2E3F4567890ABCDF /* MockNotificationManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

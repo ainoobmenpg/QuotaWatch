@@ -270,4 +270,155 @@ final class QuotaEngineRunLoopTests: XCTestCase {
             "次回フェッチ時刻が正しく設定されていること"
         )
     }
+
+    // MARK: - lastKnownResetEpoch更新テスト（バグ2再現）
+
+    /// テスト: フェッチ成功時にlastKnownResetEpochが更新されること
+    ///
+    /// ## 背景
+    /// 修正前: QuotaEngine.performFetch() で resetEpoch を取得しても
+    /// state.lastKnownResetEpoch に反映されていなかった
+    ///
+    /// ## 期待される動作
+    /// フェッチ成功後、snapshot.resetEpoch の値が state.lastKnownResetEpoch に反映される
+    func testPerformFetch_updatesLastKnownResetEpoch() async throws {
+        // APIキーを設定
+        try await testKeychain.write(apiKey: "test_api_key")
+
+        // MockProviderを設定（resetEpoch付き）
+        let mockProvider = MockProvider()
+        mockProvider.setShouldThrowRateLimit(false)
+        let expectedResetEpoch = Int(Date().timeIntervalSince1970) + 18000  // 5時間後
+        mockProvider.setMockResetEpoch(expectedResetEpoch)
+
+        // 初期状態（lastKnownResetEpochは0）
+        let now = Date().epochSeconds
+        let initialState = AppState(
+            nextFetchEpoch: now,
+            backoffFactor: 1,
+            lastFetchEpoch: 0,
+            lastError: "",
+            lastKnownResetEpoch: 0,  // 初期値0
+            lastNotifiedResetEpoch: 0,
+            consecutiveFailureCount: 0
+        )
+        try await testPersistence.saveState(initialState)
+
+        let engine = try await QuotaEngine(
+            provider: mockProvider,
+            persistence: testPersistence,
+            keychain: testKeychain
+        )
+
+        // 初期状態確認
+        let stateBefore = await engine.getState()
+        XCTAssertEqual(stateBefore.lastKnownResetEpoch, 0, "初期状態ではlastKnownResetEpochは0")
+
+        // フェッチ実行
+        await engine.startRunLoop()
+        try await Task.sleep(nanoseconds: 200_000_000)  // 0.2秒待機
+
+        // フェッチ後の状態確認
+        let stateAfter = await engine.getState()
+        XCTAssertEqual(
+            stateAfter.lastKnownResetEpoch,
+            expectedResetEpoch,
+            "フェッチ成功後、lastKnownResetEpochが更新されるべき"
+        )
+
+        await engine.stopRunLoop()
+    }
+
+    /// テスト: snapshot.resetEpochがnilの場合、lastKnownResetEpochは更新されないこと
+    ///
+    /// ## 期待される動作
+    /// resetEpochがnilの場合は、lastKnownResetEpochを更新しない（前回値を維持）
+    func testPerformFetch_doesNotUpdateLastKnownResetEpoch_whenResetEpochIsNil() async throws {
+        // APIキーを設定
+        try await testKeychain.write(apiKey: "test_api_key")
+
+        // MockProviderを設定（resetEpochをnilに設定）
+        let mockProvider = MockProvider()
+        mockProvider.setShouldThrowRateLimit(false)
+        mockProvider.setMockResetEpoch(nil)  // resetEpochをnil
+
+        // 初期状態（lastKnownResetEpochに既存値を設定）
+        let now = Date().epochSeconds
+        let existingResetEpoch = now + 7200  // 2時間後（既存値）
+        let initialState = AppState(
+            nextFetchEpoch: now,
+            backoffFactor: 1,
+            lastFetchEpoch: 0,
+            lastError: "",
+            lastKnownResetEpoch: existingResetEpoch,  // 既存値
+            lastNotifiedResetEpoch: 0,
+            consecutiveFailureCount: 0
+        )
+        try await testPersistence.saveState(initialState)
+
+        let engine = try await QuotaEngine(
+            provider: mockProvider,
+            persistence: testPersistence,
+            keychain: testKeychain
+        )
+
+        // 初期状態確認
+        let stateBefore = await engine.getState()
+        XCTAssertEqual(stateBefore.lastKnownResetEpoch, existingResetEpoch, "初期状態のlastKnownResetEpochを確認")
+
+        // フェッチ実行
+        await engine.startRunLoop()
+        try await Task.sleep(nanoseconds: 200_000_000)  // 0.2秒待機
+
+        // フェッチ後の状態確認
+        let stateAfter = await engine.getState()
+        XCTAssertEqual(
+            stateAfter.lastKnownResetEpoch,
+            existingResetEpoch,
+            "resetEpochがnilの場合、lastKnownResetEpochは更新されず既存値を維持すべき"
+        )
+
+        await engine.stopRunLoop()
+    }
+
+    /// テスト: forceFetch成功時もlastKnownResetEpochが更新されること
+    func testForceFetch_updatesLastKnownResetEpoch() async throws {
+        // APIキーを設定
+        try await testKeychain.write(apiKey: "test_api_key")
+
+        // MockProviderを設定（resetEpoch付き）
+        let mockProvider = MockProvider()
+        mockProvider.setShouldThrowRateLimit(false)
+        let expectedResetEpoch = Int(Date().timeIntervalSince1970) + 18000  // 5時間後
+        mockProvider.setMockResetEpoch(expectedResetEpoch)
+
+        // 初期状態（lastKnownResetEpochは0）
+        let initialState = AppState(
+            nextFetchEpoch: Date().epochSeconds + 3600,  // 未来
+            backoffFactor: 1,
+            lastFetchEpoch: 0,
+            lastError: "",
+            lastKnownResetEpoch: 0,
+            lastNotifiedResetEpoch: 0,
+            consecutiveFailureCount: 0
+        )
+        try await testPersistence.saveState(initialState)
+
+        let engine = try await QuotaEngine(
+            provider: mockProvider,
+            persistence: testPersistence,
+            keychain: testKeychain
+        )
+
+        // forceFetch実行
+        _ = try await engine.forceFetch()
+
+        // フェッチ後の状態確認
+        let stateAfter = await engine.getState()
+        XCTAssertEqual(
+            stateAfter.lastKnownResetEpoch,
+            expectedResetEpoch,
+            "forceFetch成功後、lastKnownResetEpochが更新されるべき"
+        )
+    }
 }
