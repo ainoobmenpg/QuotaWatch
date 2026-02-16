@@ -52,6 +52,8 @@ struct SecondaryQuotaView: View, Equatable {
     /// セカンダリクォータカード（小型）
     @ViewBuilder
     private func secondaryQuotaCard(_ limit: UsageLimit) -> some View {
+        let cardWidth: CGFloat = limit.usageDetails.isEmpty ? 80 : 110
+
         VStack(spacing: 8) {
             // 小型円グラフ（32pt）
             secondaryGauge(for: limit)
@@ -61,7 +63,7 @@ struct SecondaryQuotaView: View, Equatable {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
-                .frame(maxWidth: 60)
+                .frame(maxWidth: cardWidth - 16)
 
             // 使用率または残り量表示
             VStack(alignment: .leading, spacing: 2) {
@@ -86,10 +88,36 @@ struct SecondaryQuotaView: View, Equatable {
                         .font(.caption2)
                         .foregroundStyle(Color.secondary.opacity(0.6))
                 }
+
+                // MCPサービス内訳（usageDetails）
+                if !limit.usageDetails.isEmpty {
+                    Divider()
+                        .padding(.vertical, 2)
+
+                    ForEach(limit.usageDetails.prefix(3)) { detail in
+                        HStack(spacing: 4) {
+                            Text(formatUsageDetailLabel(detail.modelCode))
+                                .font(.system(size: 9))
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text("\(detail.usage)")
+                                .font(.system(size: 9, weight: .medium))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    // 省略インジケーター
+                    if limit.usageDetails.count > 3 {
+                        Text("+\(limit.usageDetails.count - 3) more")
+                            .font(.system(size: 8))
+                            .foregroundStyle(Color.secondary.opacity(0.6))
+                    }
+                }
             }
         }
-        .frame(width: 80)
+        .frame(width: cardWidth)
         .padding(.vertical, 8)
+        .padding(.horizontal, 6)
         .background(
             RoundedRectangle(cornerRadius: 8)
                 .fill(Color(nsColor: .controlBackgroundColor).opacity(0.5))
@@ -227,6 +255,26 @@ struct SecondaryQuotaView: View, Equatable {
         UsageLimit(label: "Daily", pct: 45, used: nil, total: nil, remaining: nil, resetEpoch: nil)
     ])
     .frame(width: 300)
+    .padding()
+}
+
+#Preview("TIME_LIMIT（内訳付き）") {
+    SecondaryQuotaView(limits: [
+        UsageLimit(
+            label: "Time Limit",
+            pct: 4,
+            used: 42,
+            total: 1000,
+            remaining: 958,
+            resetEpoch: Int(Date().timeIntervalSince1970) + 300 * 3600 + 4 * 60,
+            usageDetails: [
+                UsageDetail(modelCode: "search-prime", usage: 35),
+                UsageDetail(modelCode: "web-reader", usage: 7),
+                UsageDetail(modelCode: "zread", usage: 0)
+            ]
+        )
+    ])
+    .frame(width: 350)
     .padding()
 }
 
