@@ -56,7 +56,7 @@ UI/通知が参照する唯一のモデル:
 - **Endpoint**: `https://api.z.ai/api/monitor/usage/quota/limit`
 - **Method**: GET
 - **Headers**: `Authorization: <API_KEY>`（ベアトークン形式）
-- **Response**: `quota-watch-menubar-docs/spec/api_sample.json` 参照
+- **Response**: `docs-archive/spec/api_sample.json` 参照
 
 ## レート制限判定（バックオフ対象）
 
@@ -70,7 +70,7 @@ UI/通知が参照する唯一のモデル:
 - `usage_cache.json` - 最新成功レスポンス（`UsageSnapshot`）
 - `state.json` - 実行状態（次回フェッチ時刻、バックオフ係数、通知重複防止用epoch）
 
-**状態スキーマ**: `quota-watch-menubar-docs/spec/state_schema.json` 参照
+**状態スキーマ**: `docs-archive/spec/state_schema.json` 参照
 
 ## ログ機能
 
