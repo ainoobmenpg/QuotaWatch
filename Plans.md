@@ -125,8 +125,60 @@ QuotaWatch/
 
 ---
 
+### Phase 4: 独立型MCPサーバー（API直接版） ✅
+
+> **目的**: Macのファイルを読まず、Z.ai APIを直接叩く版を実装
+> **用途**: Windows/WSL2で常時稼働、個人用
+
+#### 設計
+
+**データフロー**:
+```
+環境変数 ZAI_API_KEY
+    ↓
+MCPサーバー（Windows/WSL2）
+    ↓ HTTP GET
+Z.ai API（https://api.z.ai/api/monitor/usage/quota/limit）
+    ↓ レスポンス正規化
+OpenCode / MCPクライアント
+```
+
+#### タスク
+
+- [x] **T4-1**: APIクライアント実装
+  - `fetchApi()` 関数作成
+  - `Authorization` ヘッダーでAPIキー送信
+  - エラーハンドリング（429, ネットワークエラー等）
+
+- [x] **T4-2**: 環境変数対応
+  - `process.env.ZAI_API_KEY` から読み取り
+  - 未設定時はエラーメッセージを返す
+
+- [x] **T4-3**: レスポンス正規化
+  - APIレスポンス → `UsageSnapshot` 形式に変換
+  - 既存の `tools.ts` はそのまま使えるようにする
+
+- [x] **T4-4**: 動作確認
+  - ビルド: `npm run build`
+  - 実行: `ZAI_API_KEY=xxx npm start`
+  - ツール呼び出し確認
+
+- [x] **T4-5**: README更新
+  - セットアップ手順（環境変数設定）
+  - Windows/WSL2での使い方
+
+---
+
+## 🔧 提供するMCPツール
+
+### `get_quota_status`（変更なし）
+現在のクォータ状態を構造化データで返す。
+
+### `get_quota_summary`（変更なし）
+人間が読みやすい形式でサマリーを返す。
+
+---
+
 ## 🚀 次のアクション
 
-1. `T1-1` から開始: `mcp/` ディレクトリ作成
-2. Phase 1完了後にPhase 2へ
-3. 動作確認後、Phase 3でドキュメント整備
+**Phase 4を開始**: `T4-1` APIクライアント実装から

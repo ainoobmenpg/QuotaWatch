@@ -1,6 +1,8 @@
 # QuotaWatch MCP Server
 
-QuotaWatchアプリのクォータデータをMCP（Model Context Protocol）経由で公開するサーバーです。
+Z.aiのクォータデータをMCP（Model Context Protocol）経由で公開するサーバーです。
+
+**このバージョンはZ.ai APIを直接叩きます**（QuotaWatchアプリ不要）。
 
 ## 機能
 
@@ -22,7 +24,21 @@ npm install
 npm run build
 ```
 
-### 3. Claude Codeへの登録
+### 3. 環境変数の設定
+
+Z.aiのAPIキーを環境変数 `ZAI_API_KEY` に設定します。
+
+```bash
+# 一時的（現在のセッションのみ）
+export ZAI_API_KEY="your-api-key"
+
+# 永続的（.bashrc や .zshrc に追加）
+echo 'export ZAI_API_KEY="your-api-key"' >> ~/.bashrc
+```
+
+### 4. MCPクライアントへの登録
+
+#### Claude Code
 
 `.claude/settings.json` に以下を追加：
 
@@ -31,13 +47,32 @@ npm run build
   "mcpServers": {
     "quotawatch": {
       "command": "node",
-      "args": ["/path/to/QuotaWatch/mcp/dist/index.js"]
+      "args": ["/path/to/QuotaWatch/mcp/dist/index.js"],
+      "env": {
+        "ZAI_API_KEY": "your-api-key"
+      }
     }
   }
 }
 ```
 
-※ パスはプロジェクトのルートディレクトリに合わせて調整してください。
+#### OpenCode（Windows/WSL2）
+
+`~/.config/opencode/mcp.json` または該当設定ファイルに追加：
+
+```json
+{
+  "mcpServers": {
+    "quotawatch": {
+      "command": "node",
+      "args": ["/mnt/c/path/to/QuotaWatch/mcp/dist/index.js"],
+      "env": {
+        "ZAI_API_KEY": "your-api-key"
+      }
+    }
+  }
+}
+```
 
 ## 使用可能なツール
 
@@ -61,17 +96,7 @@ npm run build
     },
     "resetAt": "2026-02-17T02:00:00Z",
     "resetAtJST": "2026-02-17 11:00:00",
-    "secondary": [
-      { "label": "Time Limit", "percentage": 15, "used": 45, "total": 300, "remaining": 255 }
-    ]
-  },
-  "state": {
-    "nextFetchAt": "2026-02-16T21:05:00Z",
-    "backoffFactor": 1,
-    "lastFetchAt": "2026-02-16T21:00:00Z",
-    "lastError": "",
-    "lastKnownResetAt": "2026-02-17T02:00:00Z",
-    "lastNotifiedResetAt": "2026-02-16T17:00:00Z"
+    "secondary": []
   }
 }
 ```
@@ -84,19 +109,19 @@ npm run build
 ```
 📊 GLM 5h: 42% used (126.0k/300.0k tokens)
 ⏰ Resets at 2026-02-17 11:00:00
-📦 Secondary: Time Limit 15%, Monthly 8%
-   └─ Time Limit details: Search: 30, Reader: 15
+📦 Secondary: Web Search 12%
 📡 Last fetched at 2026-02-17 06:00:00
 ```
 
 ## データソース
 
-このMCPサーバーは以下のファイルを読み取ります：
+このMCPサーバーは **Z.ai API** を直接叩きます：
 
-- `~/Library/Application Support/com.quotawatch/usage_cache.json` - クォータデータ
-- `~/Library/Application Support/com.quotawatch/state.json` - アプリ状態
+- **Endpoint**: `https://api.z.ai/api/monitor/usage/quota/limit`
+- **Method**: GET
+- **Auth**: Bearer Token（`ZAI_API_KEY` 環境変数）
 
-QuotaWatchアプリが実行され、データがフェッチされている必要があります。
+QuotaWatchアプリは不要です。
 
 ## 開発
 
@@ -110,9 +135,20 @@ npm run build
 # ウォッチモードでビルド
 npm run watch
 
-# 手動実行（STDIO transportが必要なため、通常はMCPクライアント経由で使用）
-npm start
+# 手動実行（テスト用）
+ZAI_API_KEY=your-key npm start
 ```
+
+## エラーハンドリング
+
+| エラータイプ | 説明 |
+|-------------|------|
+| `config` | `ZAI_API_KEY` が設定されていない |
+| `auth` | 認証失敗（HTTP 401/403） |
+| `rate_limit` | レート制限（HTTP 429 または APIコード 1302/1303/1305） |
+| `server` | サーバーエラー（HTTP 5xx） |
+| `network` | ネットワークエラー、タイムアウト |
+| `parse` | JSONパースエラー |
 
 ## ライセンス
 

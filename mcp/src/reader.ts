@@ -44,12 +44,17 @@ export interface UsageDetail {
 
 /** AppState - QuotaWatchアプリの実行状態 */
 export interface AppState {
-  nextFetchEpoch: number;
-  backoffFactor: number;
-  lastFetchEpoch: number;
-  lastError: string;
-  lastKnownResetEpoch: number;
-  lastNotifiedResetEpoch: number;
+  fetch: {
+    nextFetchEpoch: number;
+    lastFetchEpoch: number;
+    lastError: string;
+    backoffFactor: number;
+    consecutiveFailureCount: number;
+  };
+  notification: {
+    lastNotifiedResetEpoch: number;
+    lastKnownResetEpoch: number;
+  };
 }
 
 /** 読み取り結果（ファイルが存在しない場合はnull） */
@@ -149,4 +154,73 @@ export function epochToJSTString(epochSeconds: number | null): string | null {
   }
   const date = new Date(epochSeconds * 1000);
   return date.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
+}
+
+// MARK: - API Response Conversion
+
+/** ZaiApiLimitのtypeを表示用ラベルに変換 */
+function limitTypeToLabel(type: string): string {
+  const labelMap: Record<string, string> = {
+    TOKENS_5H: "GLM 5h",
+    WEB_SEARCH_MONTHLY: "Web Search",
+    TIME_LIMIT: "Time Limit",
+    TOKENS_MONTHLY: "Monthly Tokens",
+  };
+  return labelMap[type] ?? type;
+}
+
+/** nextResetTime（epoch秒またはISO文字列）をepoch秒に変換 */
+function parseResetTime(value: number | string | undefined): number | null {
+  if (value === undefined) return null;
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return null;
+    return Math.floor(date.getTime() / 1000);
+  }
+  return null;
+}
+
+/** Z.ai APIレスポンスのlimitエントリをUsageLimitに変換 */
+import type { ZaiApiLimit } from "./api.js";
+
+export function convertLimitToUsageLimit(limit: ZaiApiLimit): UsageLimit {
+  return {
+    label: limitTypeToLabel(limit.type),
+    pct: limit.percentage ?? null,
+    used: limit.usage,
+    total: limit.number,
+    remaining: limit.remaining,
+    resetEpoch: parseResetTime(limit.nextResetTime),
+    usageDetails: [],
+  };
+}
+
+/** Z.ai APIレスポンス全体をUsageSnapshotに変換 */
+export function convertApiToUsageSnapshot(
+  limits: ZaiApiLimit[]
+): UsageSnapshot {
+  const now = Math.floor(Date.now() / 1000);
+
+  // プライマリ（TOKENS_5H）を探す
+  const primaryLimit = limits.find((l) => l.type === "TOKENS_5H");
+  // セカンダリ（TOKENS_5H以外）
+  const secondaryLimits = limits.filter((l) => l.type !== "TOKENS_5H");
+
+  const primary = primaryLimit
+    ? convertLimitToUsageLimit(primaryLimit)
+    : null;
+
+  return {
+    providerId: "zai",
+    fetchedAtEpoch: now,
+    primaryTitle: primary?.label ?? "Unknown",
+    primaryPct: primary?.pct ?? null,
+    primaryUsed: primary?.used ?? null,
+    primaryTotal: primary?.total ?? null,
+    primaryRemaining: primary?.remaining ?? null,
+    resetEpoch: primary?.resetEpoch ?? null,
+    secondary: secondaryLimits.map(convertLimitToUsageLimit),
+    rawDebugJson: null,
+  };
 }

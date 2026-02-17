@@ -18,6 +18,10 @@ Pods/
 # Claude Code（ユーザーローカル設定）
 .claude/
 
+# MCP設定（ローカルパス・APIキーを含むため共有しない）
+.mcp.json
+mcp/opencode.json
+
 # Claude Code Harness（ローカルツールバージョン）
 .claude-code-harness-version
 

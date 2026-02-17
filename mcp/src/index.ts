@@ -52,13 +52,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         content: [
           {
             type: "text",
-            text: JSON.stringify(handleGetQuotaStatus(), null, 2),
+            text: JSON.stringify(await handleGetQuotaStatus(), null, 2),
           },
         ],
       };
 
     case "get_quota_summary":
-      const summary = handleGetQuotaSummary();
+      const summary = await handleGetQuotaSummary();
       return {
         content: [
           {

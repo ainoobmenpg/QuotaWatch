@@ -11,10 +11,12 @@ import {
   readState,
   epochToISOString,
   epochToJSTString,
+  convertApiToUsageSnapshot,
   type UsageSnapshot,
   type AppState,
   type ReadResult,
 } from "./reader.js";
+import { fetchZaiApi, getApiKey } from "./api.js";
 
 // MARK: - Tool Definitions
 
@@ -79,16 +81,29 @@ export interface QuotaStatusResponse {
 // MARK: - Tool Handlers
 
 /** get_quota_status ツールのハンドラー */
-export function handleGetQuotaStatus(): QuotaStatusResponse {
-  const usageCache = readUsageCache();
-  const state = readState();
-
-  if (!usageCache) {
+export async function handleGetQuotaStatus(): Promise<QuotaStatusResponse> {
+  // APIキーチェック
+  if (!getApiKey()) {
     return {
       success: false,
-      error: "QuotaWatch data not found. Please ensure the QuotaWatch app is running and has fetched quota data.",
+      error: "ZAI_API_KEY environment variable is not set. Please set it before using this tool.",
     };
   }
+
+  // API呼び出し
+  const result = await fetchZaiApi();
+
+  if (!result.success) {
+    return {
+      success: false,
+      error: `API Error (${result.error.type}): ${result.error.message}`,
+    };
+  }
+
+  // レスポンス変換
+  const limits = result.data.data?.limits ?? [];
+  const usageCache = convertApiToUsageSnapshot(limits);
+  const state = readState(); // stateは引き続きローカルファイルから（オプション）
 
   // プライマリクォータ情報
   const primary = {
@@ -119,12 +134,12 @@ export function handleGetQuotaStatus(): QuotaStatusResponse {
   let stateInfo: QuotaStatusResponse["state"] | undefined;
   if (state) {
     stateInfo = {
-      nextFetchAt: epochToISOString(state.nextFetchEpoch),
-      backoffFactor: state.backoffFactor,
-      lastFetchAt: epochToISOString(state.lastFetchEpoch),
-      lastError: state.lastError,
-      lastKnownResetAt: epochToISOString(state.lastKnownResetEpoch),
-      lastNotifiedResetAt: epochToISOString(state.lastNotifiedResetEpoch),
+      nextFetchAt: epochToISOString(state.fetch.nextFetchEpoch),
+      backoffFactor: state.fetch.backoffFactor,
+      lastFetchAt: epochToISOString(state.fetch.lastFetchEpoch),
+      lastError: state.fetch.lastError,
+      lastKnownResetAt: epochToISOString(state.notification.lastKnownResetEpoch),
+      lastNotifiedResetAt: epochToISOString(state.notification.lastNotifiedResetEpoch),
     };
   }
 
@@ -143,14 +158,26 @@ export function handleGetQuotaStatus(): QuotaStatusResponse {
 }
 
 /** get_quota_summary ツールのハンドラー */
-export function handleGetQuotaSummary(): { content: string } {
-  const usageCache = readUsageCache();
-
-  if (!usageCache) {
+export async function handleGetQuotaSummary(): Promise<{ content: string }> {
+  // APIキーチェック
+  if (!getApiKey()) {
     return {
-      content: "⚠️ QuotaWatch data not found. Please ensure the QuotaWatch app is running and has fetched quota data.",
+      content: "⚠️ ZAI_API_KEY environment variable is not set.",
     };
   }
+
+  // API呼び出し
+  const result = await fetchZaiApi();
+
+  if (!result.success) {
+    return {
+      content: `⚠️ API Error (${result.error.type}): ${result.error.message}`,
+    };
+  }
+
+  // レスポンス変換
+  const limits = result.data.data?.limits ?? [];
+  const usageCache = convertApiToUsageSnapshot(limits);
 
   const lines: string[] = [];
 
