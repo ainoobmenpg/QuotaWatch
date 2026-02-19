@@ -179,6 +179,67 @@ OpenCode / MCPクライアント
 
 ---
 
+### Phase 5: MCPサーバー HTTP公開 [保留]
+
+> **目的**: Win-Node側でMCPサーバーをHTTP（SSE）で公開し、Mac側のOpenClawから使えるようにする
+> **状態**: ⏸️ 保留（Mac側だけで運用することにしたため）
+> **理由**: Macをスリープさせない設定で運用するため、HTTP公開は不要
+
+#### 設計
+
+**データフロー**:
+```
+Mac (OpenClaw)
+    ↓ HTTP GET /sse
+Win-Node (192.168.0.80:ポート)
+    ↓ MCP over HTTP/SSE
+Z.ai API
+```
+
+**セキュリティ**:
+- ローカルIP（192.168.0.80）でのみリッスン
+- 外部からのアクセス不可（LAN内のみ）
+
+#### タスク
+
+- [ ] **T5-1**: HTTP（SSE）トランスポート実装
+  - `@modelcontextprotocol/sdk` の SSE transport 使用
+  - Express または Hono でHTTPサーバー構築
+  - 既存STDIO版との互換性維持（エントリーポイント分離）
+
+- [ ] **T5-2**: ポート設定
+  - 環境変数 `MCP_PORT` で変更可能
+  - デフォルト: 空きポート自動探索（3000-4000範囲）
+  - 設定ファイル `~/.openclaw/mcp-http.json` で永続化
+
+- [ ] **T5-3**: systemdサービス更新（Win-Node）
+  - `openclaw-mcp-http.service` 作成
+  - 自動起動設定
+
+- [ ] **T5-4**: Mac側OpenClaw設定更新
+  - MCPサーバー設定をHTTP版に変更
+  - `transport: "http"`, `url: "http://192.168.0.80:ポート/sse"`
+
+- [ ] **T5-5**: 動作確認
+  - Macがスリープ状態で Win-Node のMCPサーバーにアクセス
+  - `get_quota_status` / `get_quota_summary` 動作確認
+
+#### ディレクトリ構成（更新）
+
+```
+mcp/
+├── src/
+│   ├── index.ts          # STDIO版（既存）
+│   ├── index-http.ts     # HTTP版（新規）
+│   ├── server.ts         # 共通サーバーロジック
+│   ├── tools.ts          # MCPツール定義（既存）
+│   ├── reader.ts         # データ変換（既存）
+│   └── api.ts            # APIクライアント（既存）
+└── package.json          # scripts追加: "start:http"
+```
+
+---
+
 ## 🚀 次のアクション
 
-**Phase 4を開始**: `T4-1` APIクライアント実装から
+**Phase 5を開始**: `T5-1` HTTP（SSE）トランスポート実装から

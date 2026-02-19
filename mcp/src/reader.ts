@@ -162,6 +162,7 @@ export function epochToJSTString(epochSeconds: number | null): string | null {
 function limitTypeToLabel(type: string): string {
   const labelMap: Record<string, string> = {
     TOKENS_5H: "GLM 5h",
+    TOKENS_LIMIT: "GLM Tokens",
     WEB_SEARCH_MONTHLY: "Web Search",
     TIME_LIMIT: "Time Limit",
     TOKENS_MONTHLY: "Monthly Tokens",
@@ -169,15 +170,26 @@ function limitTypeToLabel(type: string): string {
   return labelMap[type] ?? type;
 }
 
-/** nextResetTime（epoch秒またはISO文字列）をepoch秒に変換 */
+/** nextResetTime（epoch秒、epochミリ秒、またはISO文字列）をepoch秒に変換 */
 function parseResetTime(value: number | string | undefined): number | null {
   if (value === undefined) return null;
-  if (typeof value === "number") return value;
+  
+  // 数値の場合：ミリ秒か秒かを判定（閾値は年2025年のepoch秒）
+  if (typeof value === "number") {
+    // 1735689600 (2025-01-01) より大きければミリ秒と判定
+    if (value > 1735689600) {
+      return Math.floor(value / 1000);
+    }
+    return value;
+  }
+  
+  // 文字列の場合：ISO文字列としてパース
   if (typeof value === "string") {
     const date = new Date(value);
     if (isNaN(date.getTime())) return null;
     return Math.floor(date.getTime() / 1000);
   }
+  
   return null;
 }
 
@@ -202,10 +214,10 @@ export function convertApiToUsageSnapshot(
 ): UsageSnapshot {
   const now = Math.floor(Date.now() / 1000);
 
-  // プライマリ（TOKENS_5H）を探す
-  const primaryLimit = limits.find((l) => l.type === "TOKENS_5H");
-  // セカンダリ（TOKENS_5H以外）
-  const secondaryLimits = limits.filter((l) => l.type !== "TOKENS_5H");
+  // プライマリ（TOKENS_LIMIT）を探す
+  const primaryLimit = limits.find((l) => l.type === "TOKENS_LIMIT");
+  // セカンダリ（TOKENS_LIMIT以外）
+  const secondaryLimits = limits.filter((l) => l.type !== "TOKENS_LIMIT");
 
   const primary = primaryLimit
     ? convertLimitToUsageLimit(primaryLimit)
