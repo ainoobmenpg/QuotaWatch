@@ -101,7 +101,7 @@ struct MenuBarDonutIcon {
 
     // MARK: - 時間フォーマット
 
-    /// 残り秒数を 0h00m 形式にフォーマット
+    /// 残り秒数を 00h00m 形式にフォーマット
     /// - Parameter seconds: 残り秒数（0以下の場合は「--:--」を返す）
     private func formatRemainingTime(_ seconds: Int) -> String {
         // リセット時間が存在しない場合は「--:--」を表示
@@ -109,10 +109,10 @@ struct MenuBarDonutIcon {
             return "--:--"
         }
 
-        // 常に XhYYm 形式で統一（4:30の紛らわしさを解消）
+        // 常に 00h00m 形式で統一（表示幅を固定）
         let hours = seconds / 3600
         let minutes = (seconds % 3600) / 60
-        return String(format: "%dh%02dm", hours, minutes)
+        return String(format: "%02dh%02dm", hours, minutes)
     }
 }
 

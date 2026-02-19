@@ -16,14 +16,14 @@ public enum TimeFormatter {
         return formatter
     }()
 
-    /// 残り時間をフォーマット（"0h04m"形式で統一）
+    /// 残り時間をフォーマット（"00h00m"形式で統一）
     ///
     /// - Parameter resetEpoch: リセット時刻（epoch秒）
     /// - Returns: フォーマットされた時間文字列
     ///
     /// ## フォーマットルール
-    /// - 常に `XhYYm` 形式で統一（4:30の紛らわしさを解消）
-    /// - 例: 4時間30分 → "4h30m", 4分30秒 → "0h04m", 45秒 → "0h00m"
+    /// - 常に `00h00m` 形式で統一（表示幅を固定）
+    /// - 例: 4時間30分 → "04h30m", 4分30秒 → "00h04m", 45秒 → "00h00m"
     public static func formatTimeRemaining(resetEpoch: Int) -> String {
         let now = Date().epochSeconds
         let seconds = max(0, resetEpoch - now)
@@ -31,7 +31,7 @@ public enum TimeFormatter {
         let hours = seconds / 3600
         let minutes = (seconds % 3600) / 60
 
-        return String(format: "%dh%02dm", hours, minutes)
+        return String(format: "%02dh%02dm", hours, minutes)
     }
 
     /// リセット時刻をフォーマット（"1/15 15:30"形式）
