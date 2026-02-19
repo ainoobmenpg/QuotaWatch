@@ -129,29 +129,30 @@ final class MenuBarDonutIconTests: XCTestCase {
     // MARK: - 時間フォーマットのテスト
 
     func testTimeFormatOverOneHour() {
-        // 1時間以上: H:MM 形式
-        // 5432秒 = 1時間30分32秒 → "1:30"
+        // 常に XhYYm 形式
+        // 5432秒 = 1時間30分32秒 → "1h30m"
         let icon = MenuBarDonutIcon(usagePercentage: 50, timeProgress: 0.5, remainingSeconds: 5432, diameter: 22)
         let image = icon.makeImage()
 
-        XCTAssertNotNil(image, "1:30形式の時間が表示されるべき")
+        XCTAssertNotNil(image, "1h30m形式の時間が表示されるべき")
     }
 
     func testTimeFormatUnderOneHour() {
-        // 1時間未満: M:SS 形式
-        // 1832秒 = 30分32秒 → "30:32"
+        // 常に XhYYm 形式
+        // 1832秒 = 30分32秒 → "0h30m"
         let icon = MenuBarDonutIcon(usagePercentage: 50, timeProgress: 0.5, remainingSeconds: 1832, diameter: 22)
         let image = icon.makeImage()
 
-        XCTAssertNotNil(image, "30:32形式の時間が表示されるべき")
+        XCTAssertNotNil(image, "0h30m形式の時間が表示されるべき")
     }
 
     func testTimeFormatUnderOneMinute() {
-        // 1分未満: M:SS 形式（0:45）
+        // 常に XhYYm 形式
+        // 45秒 → "0h00m"
         let icon = MenuBarDonutIcon(usagePercentage: 50, timeProgress: 0.5, remainingSeconds: 45, diameter: 22)
         let image = icon.makeImage()
 
-        XCTAssertNotNil(image, "0:45形式の時間が表示されるべき")
+        XCTAssertNotNil(image, "0h00m形式の時間が表示されるべき")
     }
 
     func testTimeFormatZero() {
