@@ -20,7 +20,7 @@ public enum KeychainError: Error, Sendable, LocalizedError {
 // MARK: - KeychainStore
 
 public actor KeychainStore {
-    private static let service = "zai_api_key"
+    private let service: String
     private let account: String
     private let logger = Logger(subsystem: "com.quotawatch.keychain", category: "KeychainStore")
 
@@ -36,9 +36,22 @@ public actor KeychainStore {
         return Bundle.main.bundleIdentifier ?? "com.quotawatch.QuotaWatch"
     }
 
+    /// デフォルトイニシャライザ（Z.ai用）
     public init(account: String? = nil) {
+        self.service = "zai_api_key"
         self.account = account ?? NSUserName()
-        logger.log("KeychainStore初期化: service=\(Self.service), account=\(self.account)")
+        logger.log("KeychainStore初期化: service=\(self.service), account=\(self.account)")
+    }
+
+    /// プロバイダー指定イニシャライザ
+    ///
+    /// - Parameters:
+    ///   - providerId: プロバイダーID
+    ///   - account: アカウント名（デフォルト: 現在のユーザー名）
+    public init(providerId: ProviderId, account: String? = nil) {
+        self.service = providerId.keychainService
+        self.account = account ?? NSUserName()
+        logger.log("KeychainStore初期化: service=\(self.service), account=\(self.account)")
     }
 
     public func read() async throws -> String? {
@@ -135,7 +148,7 @@ public actor KeychainStore {
     private func createQuery(returnData: Bool = false) -> [String: Any] {
         var query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: Self.service,
+            kSecAttrService as String: self.service,
             kSecAttrAccount as String: account,
             kSecAttrAccessGroup as String: accessGroup
         ]

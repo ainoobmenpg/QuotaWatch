@@ -16,6 +16,9 @@ struct MenuBarPopupView: View {
         VStack {
             if let error = appDelegate.initializationError {
                 errorView(error)
+            } else if viewModel.apiKeyRequired != nil {
+                // プロバイダー切り替え時にAPIキー未設定エラー
+                apiKeyNotSetView(providerId: viewModel.apiKeyRequired ?? appDelegate.currentProviderId)
             } else {
                 contentView(viewModel: viewModel)
             }
@@ -28,7 +31,7 @@ struct MenuBarPopupView: View {
         // APIキー未設定時は専用UIを表示
         if let engineError = error as? QuotaEngineError,
            case .apiKeyNotSet = engineError {
-            apiKeyNotSetView()
+            apiKeyNotSetView(providerId: appDelegate.currentProviderId)
         } else {
             // 既存のエラー表示
             VStack(alignment: .leading, spacing: 12) {
@@ -50,28 +53,27 @@ struct MenuBarPopupView: View {
     }
 
     @ViewBuilder
-    private func apiKeyNotSetView() -> some View {
+    private func apiKeyNotSetView(providerId: ProviderId) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label("APIキー未設定", systemImage: "key.badge")
+            Label("APIキー未設定", systemImage: "key.fill")
                 .font(.headline)
                 .foregroundColor(.orange)
 
-            Text("Z.aiのAPIキーを設定してください")
+            Text("\(providerId.displayName)のAPIキーを入力してください")
                 .font(.caption)
                 .foregroundColor(.secondary)
 
-            Button("APIキーを設定") {
-                appDelegate.showingAPIKeySheet = true
-            }
-            .buttonStyle(.borderedProminent)
+            // APIキー入力フィールド
+            APIKeyInputField(
+                providerId: providerId,
+                onSave: { apiKey in
+                    Task {
+                        await viewModel.saveAPIKeyAndRetry(providerId: providerId, apiKey: apiKey)
+                    }
+                }
+            )
         }
         .padding()
-        .onAppear {
-            // 少し遅延してから自動的にシートを表示
-            DispatchQueue.main.async {
-                appDelegate.showingAPIKeySheet = true
-            }
-        }
     }
 
     @ViewBuilder
@@ -172,6 +174,9 @@ struct MenuBarPopupView: View {
                         },
                         onLoginItemChanged: { enabled in
                             await viewModel.setLoginItemEnabled(enabled)
+                        },
+                        onProviderChanged: { providerId in
+                            await viewModel.switchProvider(providerId)
                         },
                         onExportLog: {
                             Task {
@@ -275,6 +280,48 @@ struct MenuBarPopupView: View {
             .fill(Color.secondary.opacity(0.2))
             .frame(width: size, height: size)
             .shimmer()
+    }
+}
+
+// MARK: - APIキー入力フィールド
+
+/// ポップアップ内に表示されるAPIキー入力フィールド
+struct APIKeyInputField: View {
+    let providerId: ProviderId
+    let onSave: (String) -> Void
+
+    @State private var apiKey: String = ""
+    @State private var isSaving: Bool = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("\(providerId.displayName) API Key")
+                .font(.caption)
+                .foregroundColor(.secondary)
+
+            HStack(spacing: 8) {
+                SecureField("APIキーを入力", text: $apiKey)
+                    .textFieldStyle(.roundedBorder)
+                    .disabled(isSaving)
+
+                Button(action: {
+                    guard !apiKey.isEmpty else { return }
+                    isSaving = true
+                    onSave(apiKey)
+                }) {
+                    if isSaving {
+                        ProgressView()
+                            .scaleEffect(0.7)
+                            .frame(width: 60)
+                    } else {
+                        Text("保存")
+                            .frame(width: 60)
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(apiKey.isEmpty || isSaving)
+            }
+        }
     }
 }
 

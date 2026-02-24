@@ -27,6 +27,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     /// APIキー保存エラー
     var apiKeySaveError: String?
 
+    /// 現在のプロバイダーID（APIキー設定シート用）
+    var currentProviderId: ProviderId = .zai
+
     // MARK: - Private Properties
 
     private let loggerManager: LoggerManager = .shared
@@ -82,18 +85,43 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
 
         initializationError = nil
 
+        // AppSettingsからプロバイダーIDを取得
+        let settings = AppSettings()
+        var providerId = settings.providerId
+
+        // 選択したプロバイダーのAPIキーをチェック
+        // ない場合はZ.aiにフォールバック（既存の ключがあるかもしれないため）
+        let keychain = KeychainStore(providerId: providerId)
+        let hasAPIKey: Bool
         do {
-            let provider = ZaiProvider()
+            hasAPIKey = try await keychain.exists()
+        } catch {
+            hasAPIKey = false
+        }
+
+        // APIキーがない場合はZ.aiにフォールバック
+        if !hasAPIKey && providerId != .zai {
+            await loggerManager.log("APIキーが見つからないためZ.aiにフォールバック", category: "APP")
+            providerId = .zai
+            settings.providerId = .zai
+        }
+
+        // 現在のproviderIdを設定（APIキー設定シート用）
+        currentProviderId = providerId
+
+        do {
+            // ProviderFactoryでプロバイダーを生成
+            let provider = ProviderFactory.create(providerId: providerId)
             let persistence = PersistenceManager(customDirectoryURL: FileManager.default
                 .urls(for: .applicationSupportDirectory, in: .userDomainMask)
                 .first!
                 .appending(path: "com.quotawatch"))
-            let keychain = KeychainStore()
+            let keychainForEngine = KeychainStore(providerId: providerId)
 
             let newEngine = try await QuotaEngine(
                 provider: provider,
                 persistence: persistence,
-                keychain: keychain
+                keychain: keychainForEngine
             )
 
             // ContentViewModelを初期化（軽量な初期化のみ）
@@ -135,9 +163,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     /// APIキー未設定のアラートを表示
     @MainActor
     private func showAPIKeyAlert() {
+        let settings = AppSettings()
+        let providerName = settings.providerId.displayName
+
         let alert = NSAlert()
         alert.messageText = "APIキー未設定"
-        alert.informativeText = "Z.aiのAPIキーを設定してください。\nメニューバーのQuotaWatchアイコンをクリックして設定してください。"
+        alert.informativeText = "\(providerName)のAPIキーを設定してください。\nメニューバーのQuotaWatchアイコンをクリックして設定してください。"
         alert.alertStyle = .informational
         alert.addButton(withTitle: "OK")
         alert.runModal()
@@ -148,8 +179,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     /// APIキーを保存して再初期化
     @MainActor
     func saveAPIKey(_ apiKey: String) async {
+        let settings = AppSettings()
+        let providerId = settings.providerId
+
         do {
-            let keychain = KeychainStore()
+            let keychain = KeychainStore(providerId: providerId)
             try await keychain.write(apiKey: apiKey)
             await loggerManager.log("APIキー保存成功", category: "APP")
 

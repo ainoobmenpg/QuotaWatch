@@ -36,3 +36,21 @@ public protocol Provider: Sendable {
     /// - Returns: バックオフ判定結果
     func classifyBackoff(error: ProviderError) -> BackoffDecision
 }
+
+// MARK: - Provider Factory
+
+/// Provider生成工厂
+public enum ProviderFactory {
+    /// ProviderIdに基づいてProviderを生成
+    ///
+    /// - Parameter providerId: プロバイダーID
+    /// - Returns: Providerインスタンス
+    public static func create(providerId: ProviderId) -> any Provider {
+        switch providerId {
+        case .zai:
+            return ZaiProvider()
+        case .minimax:
+            return MiniMaxProvider()
+        }
+    }
+}

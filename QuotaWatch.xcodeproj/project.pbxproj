@@ -55,6 +55,7 @@
 		C242F9709ACF4B3F8A7645BC /* LoggerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86AD3A993D554B4CB5E28B69 /* LoggerManager.swift */; };
 		CF96AE2DE03C4518AD389F68 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E2899782C5B4676B50BB2D8 /* AppSettings.swift */; };
 		D640CCB932A9153444DFDC7A /* ZaiProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95530C2AB237DCD923169121 /* ZaiProvider.swift */; };
+		M1M2M3M4M5M6M7M8M9M0M1 /* MiniMaxProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = M1M2M3M4M5M6M7M8M9M0M2 /* MiniMaxProvider.swift */; };
 		E6ECD1333158E07B12105BC1 /* ZaiProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03084E81161F967B5B48ED5E /* ZaiProviderTests.swift */; };
 		E820B42A116A435481D3F308F1913065 /* APIKeySettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B1681A9E15047A7A927D11A1637FACB /* APIKeySettingsSheet.swift */; };
 		E8952BC0E4454C3AA4C082BF /* QuotaGauge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 714AF4121F8B4680B9592EE2 /* QuotaGauge.swift */; };
@@ -122,6 +123,7 @@
 		883076AE5C0DD6C6140D4E82 /* QuotaWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = QuotaWatch.entitlements; sourceTree = "<group>"; };
 		9492FC5BAA382C1A54B2143A /* NotificationManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManagerTests.swift; sourceTree = "<group>"; };
 		95530C2AB237DCD923169121 /* ZaiProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZaiProvider.swift; sourceTree = "<group>"; };
+		M1M2M3M4M5M6M7M8M9M0M2 /* MiniMaxProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniMaxProvider.swift; sourceTree = "<group>"; };
 		98C9158286A96E0D12EF1C6D /* TimeFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeFormatterTests.swift; sourceTree = "<group>"; };
 		98CF57FDC73CB5839DFAE561 /* QuotaWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuotaWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9A0FF71040DBDFAF8CEDEAC2 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
@@ -170,6 +172,7 @@
 				5F2B18E2AABE4513981EDF0B /* Provider.swift */,
 				5859B5E242756C194F88349C /* ProviderError.swift */,
 				95530C2AB237DCD923169121 /* ZaiProvider.swift */,
+				M1M2M3M4M5M6M7M8M9M0M2 /* MiniMaxProvider.swift */,
 			);
 			path = Providers;
 			sourceTree = "<group>";
@@ -522,6 +525,7 @@
 				17728FD1C102DD0FA087EB19 /* TimeFormatter.swift in Sources */,
 				A444AC373B13252291BBDCD2 /* UsageSnapshot.swift in Sources */,
 				D640CCB932A9153444DFDC7A /* ZaiProvider.swift in Sources */,
+				M1M2M3M4M5M6M7M8M9M0M1 /* MiniMaxProvider.swift in Sources */,
 				C242F9709ACF4B3F8A7645BC /* LoggerManager.swift in Sources */,
 				F8A1B2C3D4E5F67890ABCDEF0 /* DebugLogger.swift in Sources */,
 				F9A1B2C3D4E5F67890ABCDEF01 /* QuotaEngineEvent.swift in Sources */,

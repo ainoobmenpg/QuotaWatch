@@ -10,6 +10,40 @@ import SwiftUI
 import OSLog
 @preconcurrency import ServiceManagement
 
+// MARK: - Provider ID
+
+/// 利用可能なプロバイダー
+public enum ProviderId: String, CaseIterable, Identifiable, Codable, Sendable {
+    case zai = "zai"
+    case minimax = "minimax"
+
+    public var id: Self { self }
+
+    /// 表示名
+    var displayName: String {
+        switch self {
+        case .zai: return "Z.ai"
+        case .minimax: return "MiniMax"
+        }
+    }
+
+    /// ダッシュボードURL
+    var dashboardURL: URL? {
+        switch self {
+        case .zai: return URL(string: "https://z.ai")
+        case .minimax: return URL(string: "https://platform.minimax.io/user-center/payment/coding-plan")
+        }
+    }
+
+    /// Keychainサービス名
+    var keychainService: String {
+        switch self {
+        case .zai: return "zai_api_key"
+        case .minimax: return "minimax_api_key"
+        }
+    }
+}
+
 // MARK: - Login Item Service
 
 /// Login Itemを管理するサービスのプロトコル
@@ -145,6 +179,7 @@ public final class AppSettings {
         static let updateInterval = "updateInterval"
         static let notificationsEnabled = "notificationsEnabled"
         static let loginItemEnabled = "loginItemEnabled"
+        static let providerId = "providerId"
     }
 
     // MARK: - 依存関係
@@ -177,6 +212,14 @@ public final class AppSettings {
             defaults.set(loginItemEnabled, forKey: Keys.loginItemEnabled)
             updateLoginItemStatus()
             logger.log("Login Item設定を変更: \(self.loginItemEnabled ? "有効" : "無効")")
+        }
+    }
+
+    /// 選択中のプロバイダー
+    public var providerId: ProviderId {
+        didSet {
+            defaults.set(providerId.rawValue, forKey: Keys.providerId)
+            logger.log("プロバイダーを変更: \(self.providerId.displayName)")
         }
     }
 
@@ -219,6 +262,14 @@ public final class AppSettings {
             defaults.set(actualStatus, forKey: Keys.loginItemEnabled)
         }
         self.loginItemEnabled = actualStatus
+
+        // プロバイダーIDを読み込み（デフォルトはZ.ai）
+        if let savedProviderId = defaults.string(forKey: Keys.providerId),
+           let provider = ProviderId(rawValue: savedProviderId) {
+            self.providerId = provider
+        } else {
+            self.providerId = .zai
+        }
     }
 
     // MARK: - Login Item管理

@@ -10,6 +10,7 @@ import OSLog
 
 /// APIキー設定用のシートView
 struct APIKeySettingsSheet: View {
+    let providerId: ProviderId
     let onSave: (String) async -> Void
     let initialError: String?
     @Environment(\.dismiss) private var dismiss
@@ -20,7 +21,8 @@ struct APIKeySettingsSheet: View {
 
     private let logger = Logger(subsystem: "com.quotawatch.app", category: "APIKeySettingsSheet")
 
-    init(onSave: @escaping (String) async -> Void, initialError: String? = nil) {
+    init(providerId: ProviderId, onSave: @escaping (String) async -> Void, initialError: String? = nil) {
+        self.providerId = providerId
         self.onSave = onSave
         self.initialError = initialError
         _saveError = State(initialValue: initialError)
@@ -29,12 +31,12 @@ struct APIKeySettingsSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             // タイトル
-            Text("Z.ai APIキー設定")
+            Text("\(providerId.displayName) APIキー設定")
                 .font(.title2)
                 .fontWeight(.semibold)
 
             // 説明文
-            Text("Z.aiのダッシュボードからAPIキーを取得してください")
+            Text("\(providerId.displayName)のダッシュボードからAPIキーを取得してください")
                 .font(.caption)
                 .foregroundColor(.secondary)
 
@@ -78,8 +80,10 @@ struct APIKeySettingsSheet: View {
             }
 
             // ダッシュボードリンク
-            Link("Z.aiダッシュボードを開く", destination: URL(string: "https://api.z.ai")!)
-                .font(.caption)
+            if let url = providerId.dashboardURL {
+                Link("\(providerId.displayName)ダッシュボードを開く", destination: url)
+                    .font(.caption)
+            }
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -106,11 +110,11 @@ struct APIKeySettingsSheet: View {
 }
 
 #Preview {
-    APIKeySettingsSheet(onSave: { apiKey in
+    APIKeySettingsSheet(providerId: .zai, onSave: { apiKey in
         try? await Task.sleep(nanoseconds: 500_000_000)
     }, initialError: nil)
 }
 
 #Preview("エラー状態") {
-    APIKeySettingsSheet(onSave: { _ in }, initialError: "保存に失敗しました")
+    APIKeySettingsSheet(providerId: .zai, onSave: { _ in }, initialError: "保存に失敗しました")
 }

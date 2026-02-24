@@ -58,6 +58,9 @@ struct SettingsView: View {
     /// Login Item設定変更アクション
     let onLoginItemChanged: (Bool) async -> Void
 
+    /// プロバイダー変更アクション
+    let onProviderChanged: (ProviderId) async -> Void
+
     /// ログエクスポートアクション
     let onExportLog: () async -> Void
 
@@ -67,6 +70,27 @@ struct SettingsView: View {
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
             VStack(alignment: .leading, spacing: 16) {
+            // プロバイダー選択
+            HStack(spacing: 12) {
+                Text("プロバイダー:")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 100, alignment: .leading)
+
+                Picker("", selection: $settings.providerId) {
+                    ForEach(ProviderId.allCases) { provider in
+                        Text(provider.displayName).tag(provider)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 160)
+                .onChange(of: settings.providerId) { _, newValue in
+                    Task { await onProviderChanged(newValue) }
+                }
+
+                Spacer()
+            }
+
             // 更新間隔
             HStack(spacing: 12) {
                     Text("更新間隔:")

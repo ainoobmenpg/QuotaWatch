@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 import UserNotifications
+import OSLog
 
 // MARK: - EngineState
 
@@ -81,10 +82,13 @@ public final class ContentViewModel: ObservableObject {
     private let engine: any QuotaEngineProtocol
 
     /// Provider（Z.ai等）
-    private let provider: Provider
+    private var currentProvider: Provider
 
     /// ロガーマネージャー
     private let loggerManager: LoggerManager = .shared
+
+    /// ロガー
+    private let logger = Logger(subsystem: "com.quotawatch.viewmodel", category: "ContentViewModel")
 
     // MARK: - UI状態（@Published）
 
@@ -106,6 +110,9 @@ public final class ContentViewModel: ObservableObject {
     /// 認証エラー状態（APIキー無効等）
     @Published private(set) var authorizationError: Bool = false
 
+    /// APIキー未設定エラー（プロバイダー切り替え時に設定）
+    @Published private(set) var apiKeyRequired: ProviderId?
+
     /// 初期データロード中かどうか
     @Published private(set) var isLoadingInitialData: Bool = true
 
@@ -122,7 +129,7 @@ public final class ContentViewModel: ObservableObject {
     /// ContentViewModelを初期化
     public init(engine: any QuotaEngineProtocol, provider: Provider) {
         self.engine = engine
-        self.provider = provider
+        self.currentProvider = provider
         self.appSettings = AppSettings()
     }
 
@@ -256,7 +263,7 @@ public final class ContentViewModel: ObservableObject {
 
     /// ダッシュボードを開く
     public func openDashboard() async {
-        if let url = provider.dashboardURL {
+        if let url = currentProvider.dashboardURL {
             NSWorkspace.shared.open(url)
         }
     }
@@ -284,10 +291,81 @@ public final class ContentViewModel: ObservableObject {
         appSettings.loginItemEnabled = enabled
     }
 
+    /// APIキーを保存してプロバイダー切り替えを再試行
+    public func saveAPIKeyAndRetry(providerId: ProviderId, apiKey: String) async {
+        logger.info("APIキー保存開始: \(providerId.displayName)")
+
+        // KeychainStoreに保存
+        let keychain = KeychainStore(providerId: providerId)
+        do {
+            try await keychain.write(apiKey: apiKey)
+            logger.info("APIキー保存成功: \(providerId.displayName)")
+
+            // プロバイダー切り替えを再試行
+            await switchProvider(providerId)
+        } catch {
+            logger.error("APIキー保存エラー: \(error.localizedDescription)")
+            errorMessage = "APIキーの保存に失敗しました: \(error.localizedDescription)"
+        }
+    }
+
+    /// プロバイダーを切り替え（Engineを再初期化）
+    public func switchProvider(_ providerId: ProviderId) async {
+        logger.info("プロバイダー切り替え: \(providerId.displayName)")
+
+        // プロバイダー設定を保存
+        appSettings.providerId = providerId
+
+        // プロバイダーを生成
+        let newProvider = ProviderFactory.create(providerId: providerId)
+
+        // Keychainを新しいプロバイダーで初期化
+        let keychain = KeychainStore(providerId: providerId)
+
+        // Engineを再初期化
+        do {
+            let persistence = PersistenceManager(customDirectoryURL: FileManager.default
+                .urls(for: .applicationSupportDirectory, in: .userDomainMask)
+                .first!
+                .appending(path: "com.quotawatch"))
+
+            // 既存のEngineを停止
+            await engine.stopRunLoop()
+
+            // 新しいEngineを作成
+            let newEngine = try await QuotaEngine(
+                provider: newProvider,
+                persistence: persistence,
+                keychain: keychain
+            )
+
+            // プロバイダーを更新
+            self.currentProvider = newProvider
+
+            // 新しいEngineでフェッチ
+            await newEngine.startRunLoop()
+            _ = try await newEngine.forceFetch()
+
+            logger.info("プロバイダー切り替え完了: \(providerId.displayName)")
+
+            // APIキー未設定エラーをクリア
+            apiKeyRequired = nil
+        } catch {
+            logger.error("プロバイダー切り替えエラー: \(error.localizedDescription)")
+
+            // APIキー未設定エラーの場合
+            if let engineError = error as? QuotaEngineError,
+               case .apiKeyNotSet = engineError {
+                // 切り替えようとしたプロバイダーIDを設定
+                apiKeyRequired = providerId
+            }
+        }
+    }
+
     // MARK: - ユーティリティ
 
-    var providerDisplayName: String { provider.displayName }
-    var dashboardURL: URL? { provider.dashboardURL }
+    var providerDisplayName: String { currentProvider.displayName }
+    var dashboardURL: URL? { currentProvider.dashboardURL }
 
     /// デバッグログをDesktopにエクスポート
     public func exportDebugLog() async -> URL? {

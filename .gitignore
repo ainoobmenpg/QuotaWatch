@@ -41,3 +41,6 @@ DerivedData/
 # Node.js
 node_modules/
 dist/
+
+# ビルド成果物
+QuotaWatch-*.zip

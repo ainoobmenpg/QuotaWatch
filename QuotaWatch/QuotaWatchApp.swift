@@ -53,6 +53,7 @@ struct QuotaWatchApp: App {
         Settings {
             if appDelegate.showingAPIKeySheet {
                 APIKeySettingsSheet(
+                    providerId: appDelegate.currentProviderId,
                     onSave: { apiKey in
                         await appDelegate.saveAPIKey(apiKey)
                     },

@@ -24,6 +24,9 @@ public struct OnboardingView: View {
     // AppSettingsからログイン時起動の設定を管理
     @State private var loginItemEnabled: Bool = false
 
+    // プロバイダー選択
+    @State private var selectedProviderId: ProviderId = .zai
+
     private let logger = Logger(subsystem: "com.quotawatch.app", category: "OnboardingView")
 
     public init(
@@ -34,22 +37,39 @@ public struct OnboardingView: View {
         self.onDismiss = onDismiss
     }
 
+    private var currentProvider: ProviderId {
+        selectedProviderId
+    }
+
     public var body: some View {
         VStack(spacing: 24) {
             Text("QuotaWatch セットアップ")
                 .font(.largeTitle)
                 .fontWeight(.bold)
 
-            Text("Z.aiのクォータ使用状況を監視するアプリケーション")
+            Text("\(currentProvider.displayName)のクォータ使用状況を監視するアプリケーション")
                 .foregroundColor(.secondary)
 
             Divider()
+
+            // プロバイダー選択
+            VStack(alignment: .leading, spacing: 8) {
+                Text("プロバイダー")
+                    .font(.headline)
+
+                Picker("プロバイダー", selection: $selectedProviderId) {
+                    ForEach(ProviderId.allCases) { provider in
+                        Text(provider.displayName).tag(provider)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("APIキー")
                     .font(.headline)
 
-                Text("Z.aiのダッシュボードからAPIキーを取得してください")
+                Text("\(currentProvider.displayName)のダッシュボードからAPIキーを取得してください")
                     .font(.caption)
                     .foregroundColor(.secondary)
 
@@ -65,8 +85,10 @@ public struct OnboardingView: View {
                         .foregroundColor(.red)
                 }
 
-                Link("Z.aiダッシュボードを開く", destination: URL(string: "https://api.z.ai")!)
-                    .font(.caption)
+                if let dashboardURL = currentProvider.dashboardURL {
+                    Link("\(currentProvider.displayName)ダッシュボードを開く", destination: dashboardURL)
+                        .font(.caption)
+                }
             }
 
             Toggle("ログイン時に起動", isOn: $loginItemEnabled)
@@ -118,6 +140,7 @@ public struct OnboardingView: View {
             // AppSettingsから初期値を読み込み
             let appSettings = AppSettings()
             loginItemEnabled = appSettings.loginItemEnabled
+            selectedProviderId = appSettings.providerId
             logger.log("OnboardingViewが表示されました")
         }
     }
@@ -137,13 +160,17 @@ public struct OnboardingView: View {
         isFetching = true
 
         do {
+            // プロバイダー設定を保存
+            let settings = AppSettings()
+            settings.providerId = selectedProviderId
+
             // APIキーを保存
-            let keychain = KeychainStore()
+            let keychain = KeychainStore(providerId: selectedProviderId)
             try await keychain.write(apiKey: trimmed)
-            logger.log("APIキー保存成功")
+            logger.log("APIキー保存成功: provider=\(selectedProviderId.displayName)")
 
             // 初回フェッチを実行（成功確認）
-            let provider = ZaiProvider()
+            let provider = ProviderFactory.create(providerId: selectedProviderId)
             let persistence = PersistenceManager(customDirectoryURL: FileManager.default
                 .urls(for: .applicationSupportDirectory, in: .userDomainMask)
                 .first!
