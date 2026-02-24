@@ -6,7 +6,8 @@ QuotaWatch 開発でよく参照するアーキテクチャとデータモデル
 
 ```
 Provider protocol（抽象レイヤー）
-├── ZaiProvider（MVP実装）
+├── ZaiProvider
+├── MiniMaxProvider
 │
 QuotaEngine（actor）
 ├── フェッチとバックオフの意思決定
@@ -30,7 +31,7 @@ ViewModel（@MainActor）
 
 ## 重要な設計原則
 
-- **MVPは単一プロバイダ（Z.ai）で完結** - 将来拡張のための最小限の抽象のみ導入
+- **マルチプロバイダ対応** - Provider抽象によりZ.ai、MiniMaxをサポート
 - **UIは正規化済み `UsageSnapshot` のみ参照** - Provider生レスポンス構造を直接見ない
 - **actor + @MainActorで状態管理を単純化** - 競合を回避
 - **APIキーはKeychainのみ** - ディスク保存は禁止
@@ -57,6 +58,13 @@ UI/通知が参照する唯一のモデル:
 - **Method**: GET
 - **Headers**: `Authorization: <API_KEY>`（ベアトークン形式）
 - **Response**: `docs-archive/spec/api_sample.json` 参照
+
+## MiniMax API仕様
+
+- **Endpoint**: `https://www.minimax.io/v1/api/openplatform/coding_plan/remains`
+- **Method**: GET
+- **Headers**: `Authorization: Bearer <API_KEY>`
+- **Response**: `model_remains` 配列から使用量を取得
 
 ## レート制限判定（バックオフ対象）
 
@@ -88,7 +96,7 @@ UI/通知が参照する唯一のモデル:
 
 ## セキュリティ
 
-- **APIキーはKeychainのみ保存**（`service=zai_api_key`）
+- **APIキーはKeychainのみ保存**（Z.ai: `service=zai_api_key`、MiniMax: `service=minimax_api_key`）
 - ディスク（UserDefaults/Application Support）に平文保存禁止
 
 ## バックオフ仕様
