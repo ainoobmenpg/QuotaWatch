@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## プロジェクト概要
 
-**QuotaWatch** は、macOSのメニューバー常駐アプリで、AIサービス（Z.ai/GLM）のクォータ使用状況を監視・表示するアプリケーションです。SwiftBarプラグインをネイティブSwiftUIアプリ（MenuBarExtra）に置換することが目的です。
+**QuotaWatch** は、macOSのメニューバー常駐アプリで、AIサービス（Z.ai/GLM、MiniMax）のクォータ使用状況を監視・表示するアプリケーションです。SwiftBarプラグインをネイティブSwiftUIアプリ（MenuBarExtra）に置換することが目的です。
 
-**現在の状態**: **MVP完了**（2026-01-19、Issue #29 Phase 10完了）。設計書は `docs-archive/` にアーカイブされています。
+**現在の状態**: **マルチプロバイダ対応完了**（2026-02-24）。設計書は `docs-archive/` にアーカイブされています。
 
 ## 対象環境
 
@@ -43,7 +43,7 @@ MenuBarExtraを使用した最小構成を設定
 2. T1: 正規化モデル + Z.ai生モデル
 3. T2: KeychainStore
 4. T2.5: ログ機能（LoggerManager + DebugLogger）
-5. T3: Provider（protocol + ZaiProvider）
+5. T3: Provider（protocol + ZaiProvider + MiniMaxProvider）
 6. T4: 永続化層
 7. T5: QuotaEngine（actor）
 8. T6: ResetNotifier + NotificationManager
